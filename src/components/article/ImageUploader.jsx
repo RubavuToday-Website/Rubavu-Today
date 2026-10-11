@@ -1,9 +1,13 @@
 import React, { useCallback, useRef, useState } from "react";
 import { Upload } from "lucide-react";
 
-const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
+export const MAX_IMAGE_SIZE_BYTES = 120 * 1024;
 
-const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+export const MAX_IMAGES_PER_POST = 2;
+
+export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
+const ALLOWED_TYPES = ALLOWED_IMAGE_TYPES;
 
 export const formatFileSize = (bytes) => {
   if (!Number.isFinite(bytes) || bytes < 0) return "";
@@ -19,8 +23,10 @@ export const validateImageFile = (file) => {
     return "Ubwoko bw'ifoto ntibushyigikiwe. Emerera JPG, PNG, WEBP, cyangwa GIF gusa.";
   }
 
-  if (file.size > MAX_FILE_SIZE_BYTES) {
-    return "Ifoto ni nini cyane. Ubunini bwasabwe ntiburenge 15 MB.";
+  if (file.size > MAX_IMAGE_SIZE_BYTES) {
+    return `Ifoto ni nini cyane. Buri foto ntiburenze ${Math.round(
+      MAX_IMAGE_SIZE_BYTES / 1024
+    )} KB.`;
   }
 
   return "";
@@ -30,7 +36,7 @@ const ImageUploader = ({
   onAdd,
   multiple = false,
   label = "Shyira amafoto hano",
-  hint = "PNG, JPG, WEBP cyangwa GIF (max 15 MB)",
+  hint = "PNG, JPG, WEBP cyangwa GIF (max 120 KB)",
 }) => {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");

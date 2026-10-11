@@ -12,7 +12,11 @@ import {
   ImagePlus,
   X,
 } from "lucide-react";
-import { validateImageFile } from "./ImageUploader";
+import {
+  validateImageFile,
+  MAX_IMAGES_PER_POST,
+  MAX_IMAGE_SIZE_BYTES,
+} from "./ImageUploader";
 import ArticlePreview from "./ArticlePreview";
 import {
   AMAKURU_DEPARTMENTS,
@@ -22,6 +26,10 @@ import {
 let itemIdCounter = 0;
 const nextId = () => `item-${Date.now()}-${itemIdCounter++}`;
 const nextImgId = () => `img-${Date.now()}-${itemIdCounter++}`;
+
+const IMAGE_SIZE_KB = Math.round(MAX_IMAGE_SIZE_BYTES / 1024);
+const MAX_IMAGES_MESSAGE = `Inkuru ishobora kugira amafoto ${MAX_IMAGES_PER_POST} gusa: rimwe munsi y'umutwe, irindi munsi y'ibisobanuro.`;
+const IMAGE_SIZE_MESSAGE = `Buri foto ntiburenze ${IMAGE_SIZE_KB} KB.`;
 
 const parseInitial = (initial) => {
   let blocks = [];
@@ -115,6 +123,10 @@ const ArticleEditor = ({
   const [formError, setFormError] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
+  const imageSectionCount = sections.filter((section) => section.type === "image").length;
+  const totalImageCount = (headerImage ? 1 : 0) + imageSectionCount;
+  const canAddAnotherImage = totalImageCount < MAX_IMAGES_PER_POST;
+
   const headerInputRef = useRef(null);
   const dirtyRef = useRef(false);
 
@@ -181,9 +193,40 @@ const ArticleEditor = ({
   };
 
   const addImagesAfter = (afterId, files) => {
+    const fileList = Array.from(files || []).filter(Boolean);
+
+    if (fileList.length === 0) return;
+
+    const remaining = MAX_IMAGES_PER_POST - totalImageCount;
+
+    if (remaining <= 0) {
+      setFormError(MAX_IMAGES_MESSAGE);
+      return;
+    }
+
+    const accepted = [];
+
+    for (const file of fileList) {
+      if (accepted.length >= remaining) break;
+
+      const message = validateImageFile(file);
+      if (message) {
+        setFormError(message);
+        continue;
+      }
+
+      accepted.push(file);
+    }
+
+    if (fileList.length > remaining) {
+      setFormError(MAX_IMAGES_MESSAGE);
+    }
+
+    if (accepted.length === 0) return;
+
     markDirty();
     const newContent = [];
-    files.forEach((file) => {
+    accepted.forEach((file) => {
       newContent.push({
         type: "image",
         id: nextId(),
@@ -263,6 +306,11 @@ const ArticleEditor = ({
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+
+    if (!headerImage && totalImageCount >= MAX_IMAGES_PER_POST) {
+      setFormError(MAX_IMAGES_MESSAGE);
+      return;
+    }
 
     const message = validateImageFile(file);
     if (message) {
@@ -567,10 +615,16 @@ const ArticleEditor = ({
             <label className="block text-xs font-bold uppercase tracking-wide text-slate-700">
               Ifoto y'Umutwe
               <span className="ml-1 font-normal normal-case text-slate-400">
-                Ntabwo ari ngombwa — ifoto itangiza inkuru hejuru
+                Ifoto ya 1 — igaragara munsi y'umutwe (ntibisabwa)
               </span>
             </label>
+            <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-500">
+              {totalImageCount}/{MAX_IMAGES_PER_POST}
+            </span>
           </div>
+          <p className="mb-2 text-[10px] font-medium text-slate-400">
+            {IMAGE_SIZE_MESSAGE}
+          </p>
 
           {headerImage ? (
             <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -616,8 +670,19 @@ const ArticleEditor = ({
           ) : (
             <button
               type="button"
-              onClick={() => headerInputRef.current?.click()}
-              className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-sm font-semibold text-slate-500 transition hover:border-blue-400 hover:bg-blue-50/40 hover:text-blue-600"
+              onClick={() => {
+                if (!canAddAnotherImage) {
+                  setFormError(MAX_IMAGES_MESSAGE);
+                  return;
+                }
+                headerInputRef.current?.click();
+              }}
+              aria-disabled={!canAddAnotherImage}
+              className={`flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 py-8 text-sm font-semibold transition ${
+                canAddAnotherImage
+                  ? "border-slate-300 bg-slate-50 text-slate-500 hover:border-blue-400 hover:bg-blue-50/40 hover:text-blue-600"
+                  : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
+              }`}
             >
               <ImagePlus className="h-5 w-5" />
               Bikora ifoto y'umutwe
@@ -625,6 +690,7 @@ const ArticleEditor = ({
                 ref={headerInputRef}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
+                disabled={!canAddAnotherImage}
                 className="hidden"
                 onChange={handleHeaderChange}
               />
@@ -638,7 +704,7 @@ const ArticleEditor = ({
               Inkuru
             </label>
             <span className="text-[10px] font-medium text-slate-400">
-              Shyira inkuru yawe yose, cyangwa andika buri gika wongeraho amafoto
+              Amafoto {totalImageCount}/{MAX_IMAGES_PER_POST} · {IMAGE_SIZE_MESSAGE}
             </span>
           </div>
 
@@ -695,13 +761,27 @@ const ArticleEditor = ({
                       className="w-full resize-y rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm leading-7 outline-none transition focus:bg-white focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                     />
                     <div className="mt-2 flex items-center justify-between">
-                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100">
+                      <label
+                        onClick={(e) => {
+                          if (!canAddAnotherImage) {
+                            e.preventDefault();
+                            setFormError(MAX_IMAGES_MESSAGE);
+                          }
+                        }}
+                        aria-disabled={!canAddAnotherImage}
+                        className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold transition ${
+                          canAddAnotherImage
+                            ? "cursor-pointer border-blue-200 bg-blue-50 text-blue-700 hover:border-blue-300 hover:bg-blue-100"
+                            : "cursor-not-allowed border-slate-200 bg-slate-50 text-slate-400"
+                        }`}
+                      >
                         <ImageIcon className="h-3.5 w-3.5" />
                         Ongeraho Ifoto munsi y'igika
                         <input
                           type="file"
                           accept="image/jpeg,image/png,image/webp,image/gif"
                           multiple
+                          disabled={!canAddAnotherImage}
                           className="hidden"
                           onChange={(e) => {
                             const files = Array.from(
