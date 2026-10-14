@@ -672,9 +672,14 @@ const FeaturedStory = ({ posts = [], matchedPostId, postRefs, language }) => {
               }}
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 via-slate-100 to-slate-300">
-              <span className="text-3xl opacity-40">📰</span>
-            </div>
+            <img
+              src="/Rubavu.jpeg"
+              alt=""
+              className="h-full w-full object-cover"
+              loading="eager"
+              width="1280"
+              height="720"
+            />
           )}
 
         </div>
@@ -881,7 +886,14 @@ const LatestWidget = ({ posts = [], postRefs }) => {
                     }}
                   />
                 ) : (
-                  <div className="h-full w-full bg-slate-100" />
+                  <img
+                    src="/Rubavu.jpeg"
+                    alt=""
+                    className="h-full w-full object-cover"
+                    loading="lazy"
+                    width="56"
+                    height="40"
+                  />
                 )}
               </div>
               <div className="min-w-0">

@@ -18,6 +18,7 @@ import {
   MAX_IMAGE_SIZE_BYTES,
 } from "./ImageUploader";
 import ArticlePreview from "./ArticlePreview";
+import LinkifiedMessage from "../common/LinkifiedMessage";
 import {
   AMAKURU_DEPARTMENTS,
   isAmakuruCategory,
@@ -26,6 +27,10 @@ import {
 let itemIdCounter = 0;
 const nextId = () => `item-${Date.now()}-${itemIdCounter++}`;
 const nextImgId = () => `img-${Date.now()}-${itemIdCounter++}`;
+
+export const ARTICLE_TITLE_MAX_LENGTH = 119;
+
+const TITLE_TOO_LONG_MESSAGE = `Umutwe ntugomba kurenga ${ARTICLE_TITLE_MAX_LENGTH} inyuguti.`;
 
 const IMAGE_SIZE_KB = Math.round(MAX_IMAGE_SIZE_BYTES / 1024);
 const MAX_IMAGES_MESSAGE = `Inkuru ishobora kugira amafoto ${MAX_IMAGES_PER_POST} gusa: rimwe munsi y'umutwe, irindi munsi y'ibisobanuro.`;
@@ -192,7 +197,7 @@ const ArticleEditor = ({
     });
   };
 
-  const addImagesAfter = (afterId, files) => {
+  const addImagesAfter = async (afterId, files) => {
     const fileList = Array.from(files || []).filter(Boolean);
 
     if (fileList.length === 0) return;
@@ -209,7 +214,7 @@ const ArticleEditor = ({
     for (const file of fileList) {
       if (accepted.length >= remaining) break;
 
-      const message = validateImageFile(file);
+      const message = await validateImageFile(file);
       if (message) {
         setFormError(message);
         continue;
@@ -251,9 +256,9 @@ const ArticleEditor = ({
     });
   };
 
-  const replaceImage = (id, file) => {
+  const replaceImage = async (id, file) => {
     markDirty();
-    const message = validateImageFile(file);
+    const message = await validateImageFile(file);
     if (message) {
       updateSection(id, { error: message });
       return;
@@ -301,7 +306,7 @@ const ArticleEditor = ({
     });
   };
 
-  const handleHeaderChange = (e) => {
+  const handleHeaderChange = async (e) => {
     markDirty();
     const file = e.target.files?.[0];
     e.target.value = "";
@@ -312,7 +317,7 @@ const ArticleEditor = ({
       return;
     }
 
-    const message = validateImageFile(file);
+    const message = await validateImageFile(file);
     if (message) {
       setHeaderImage((prev) => ({ file: null, url: prev?.url || "", error: message }));
       return;
@@ -427,6 +432,10 @@ const ArticleEditor = ({
       setFormError("Andika umutwe w'inkuru mbere yo gutanga.");
       return;
     }
+    if (title.trim().length > ARTICLE_TITLE_MAX_LENGTH) {
+      setFormError(TITLE_TOO_LONG_MESSAGE);
+      return;
+    }
     if (!paragraphText) {
       setFormError("Andika inkuru yawe mbere yo gutanga.");
       return;
@@ -451,6 +460,10 @@ const ArticleEditor = ({
 
     if (!title.trim()) {
       setFormError("Andika umutwe w'inkuru mbere yo kubika draft.");
+      return;
+    }
+    if (title.trim().length > ARTICLE_TITLE_MAX_LENGTH) {
+      setFormError(TITLE_TOO_LONG_MESSAGE);
       return;
     }
     if (headerImage?.error) {
@@ -487,7 +500,9 @@ const ArticleEditor = ({
       <form onSubmit={handleSubmit} className="space-y-6">
         {formError && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-3">
-            <p className="text-xs font-medium text-red-600">{formError}</p>
+            <p className="text-xs font-medium text-red-600">
+              <LinkifiedMessage message={formError} />
+            </p>
           </div>
         )}
 
@@ -502,14 +517,26 @@ const ArticleEditor = ({
         {extraFields}
 
         <div>
-          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-            Umutwe w'inkuru
-          </label>
+          <div className="mb-1.5 flex items-center justify-between">
+            <label className="block text-xs font-bold uppercase tracking-wide text-slate-700">
+              Umutwe w'inkuru
+            </label>
+            <span
+              className={`shrink-0 text-[10px] font-bold ${
+                title.length >= ARTICLE_TITLE_MAX_LENGTH
+                  ? "text-amber-600"
+                  : "text-slate-400"
+              }`}
+            >
+              {title.length}/{ARTICLE_TITLE_MAX_LENGTH}
+            </span>
+          </div>
           <input
             type="text"
             value={title}
+            maxLength={ARTICLE_TITLE_MAX_LENGTH}
             onChange={(e) => {
-              setTitle(e.target.value);
+              setTitle(e.target.value.slice(0, ARTICLE_TITLE_MAX_LENGTH));
               markDirty();
             }}
             required
@@ -636,7 +663,7 @@ const ArticleEditor = ({
               {headerImage.error && (
                 <div className="bg-red-50 px-4 py-2">
                   <p className="text-xs font-semibold text-red-600">
-                    {headerImage.error}
+                    <LinkifiedMessage message={headerImage.error} />
                   </p>
                 </div>
               )}
@@ -651,7 +678,7 @@ const ArticleEditor = ({
                     <input
                       ref={headerInputRef}
                       type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      accept="image/jpeg,image/png,image/webp"
                       className="hidden"
                       onChange={handleHeaderChange}
                     />
@@ -689,7 +716,7 @@ const ArticleEditor = ({
               <input
                 ref={headerInputRef}
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
+                accept="image/jpeg,image/png,image/webp"
                 disabled={!canAddAnotherImage}
                 className="hidden"
                 onChange={handleHeaderChange}
@@ -779,7 +806,7 @@ const ArticleEditor = ({
                         Ongeraho Ifoto munsi y'igika
                         <input
                           type="file"
-                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          accept="image/jpeg,image/png,image/webp"
                           multiple
                           disabled={!canAddAnotherImage}
                           className="hidden"
@@ -843,7 +870,7 @@ const ArticleEditor = ({
                             Gahindura
                             <input
                               type="file"
-                              accept="image/jpeg,image/png,image/webp,image/gif"
+                              accept="image/jpeg,image/png,image/webp"
                               className="hidden"
                               onChange={(e) => {
                                 const file = e.target.files?.[0];
@@ -918,6 +945,13 @@ const ArticleEditor = ({
                         <ArrowDown className="h-4 w-4" />
                       </button>
                     </div>
+                  </div>
+                )}
+                {section.error && (
+                  <div className="mt-2 rounded-lg bg-red-50 px-3 py-2">
+                    <p className="text-[11px] font-semibold text-red-600">
+                      <LinkifiedMessage message={section.error} />
+                    </p>
                   </div>
                 )}
               </div>

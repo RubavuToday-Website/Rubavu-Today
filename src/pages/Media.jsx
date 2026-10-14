@@ -216,11 +216,14 @@ const Media = () => {
                           loading="lazy"
                         />
                       ) : (
-                        <div className="flex aspect-[16/10] h-full w-full items-center justify-center bg-gradient-to-br from-violet-100 to-indigo-200">
-                          <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500">
-                            {language === "rw" ? "Nta ishusho" : "No image"}
-                          </span>
-                        </div>
+                        <img
+                          src="/Rubavu.jpeg"
+                          alt=""
+                          className="aspect-[16/10] h-full w-full object-cover"
+                          loading="lazy"
+                          width="400"
+                          height="250"
+                        />
                       )}
 
                       {isVideo && (

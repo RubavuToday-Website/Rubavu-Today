@@ -1760,11 +1760,13 @@ export default function PostDetails() {
                               loading="lazy"
                               decoding="async"
                               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                              onError={(e) => {
+                                e.currentTarget.onerror = null;
+                                e.currentTarget.src = "/Rubavu.jpeg";
+                              }}
                             />
                           ) : (
-                            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 text-3xl opacity-50" aria-hidden="true">
-                              📰
-                            </div>
+                            <img src="/Rubavu.jpeg" alt="" className="h-full w-full object-cover" loading="lazy" width="320" height="200" />
                           )}
                         </div>
 
@@ -1827,11 +1829,13 @@ export default function PostDetails() {
                             loading="lazy"
                             decoding="async"
                             className="h-full w-full object-cover"
+                            onError={(e) => {
+                              e.currentTarget.onerror = null;
+                              e.currentTarget.src = "/Rubavu.jpeg";
+                            }}
                           />
                         ) : (
-                          <div className="flex h-full w-full items-center justify-center text-lg opacity-30" aria-hidden="true">
-                            📰
-                          </div>
+                          <img src="/Rubavu.jpeg" alt="" className="h-full w-full object-cover" loading="lazy" width="96" height="64" />
                         )}
                       </div>
 
@@ -1908,11 +1912,13 @@ export default function PostDetails() {
                         loading="lazy"
                         decoding="async"
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        onError={(e) => {
+                          e.currentTarget.onerror = null;
+                          e.currentTarget.src = "/Rubavu.jpeg";
+                        }}
                       />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-slate-200 to-slate-100 text-3xl opacity-50" aria-hidden="true">
-                        📰
-                      </div>
+                      <img src="/Rubavu.jpeg" alt="" className="h-full w-full object-cover" loading="lazy" width="320" height="200" />
                     )}
                   </div>
                   <div className="flex min-w-0 flex-1 flex-col pt-3">

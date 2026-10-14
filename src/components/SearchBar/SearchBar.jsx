@@ -20,7 +20,7 @@ const Highlight = ({ text, query }) => {
 const SearchResultCard = ({ post, query }) => (
     <Link to={getArticleUrl(post)} className="group flex h-20 w-[min(78vw,250px)] shrink-0 flex-row overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition hover:border-red-300 hover:bg-slate-50 hover:shadow-md sm:w-[250px]">
         <div className="relative h-full w-20 shrink-0 overflow-hidden bg-slate-100">
-            {post.image ? <OptimizedImage src={post.image} alt="" widths={RESOLUTION_WIDTHS.THUMB} sizes="280px" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" /> : <div className="flex h-full items-center justify-center text-2xl opacity-30">📰</div>}
+            {post.image ? <OptimizedImage src={post.image} alt="" widths={RESOLUTION_WIDTHS.THUMB} sizes="280px" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105" onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = "/Rubavu.jpeg"; }} /> : <img src="/Rubavu.jpeg" alt="" className="h-full w-full object-cover" loading="lazy" width="80" height="80" />}
             <span className="news-category news-category-inverse absolute bottom-1 left-1 rounded bg-red-600 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wider text-white">{post.category || "Amakuru"}</span>
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center px-2 py-1.5">
