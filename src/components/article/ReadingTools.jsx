@@ -467,7 +467,7 @@ const ReadingTools = ({
           onClick={scrollToTop}
           aria-label={rw ? "Subira hejuru — sita hejuru" : "Swipe up to top"}
           title={rw ? "Sita hejuru usubire ahabanza" : "Swipe up to go back to top"}
-          className="fixed bottom-5 right-5 z-[60] flex flex-col items-center gap-0.5 rounded-full bg-red-600 px-3 py-2 text-white shadow-lg transition hover:bg-red-700 print:hidden"
+          className="fixed bottom-5 left-5 z-[60] flex flex-col items-center gap-0.5 rounded-full bg-red-600 px-3 py-2 text-white shadow-lg transition hover:bg-red-700 print:hidden"
         >
           <ChevronsUp className="rt-swipe-up-icon h-5 w-5" aria-hidden="true" />
           <span className="font-body text-[8px] font-black uppercase leading-none tracking-wider">
