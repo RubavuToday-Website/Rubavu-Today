@@ -8,11 +8,17 @@ import React, {
 } from "react";
 import rw from "../i18n/rw.json";
 import en from "../i18n/en.json";
+import AuthContext from "./AuthContext";
+import {
+    getStoredUser,
+    getToken,
+    updateLanguage as persistLanguage,
+} from "../services/api";
 import {
     TRANSLATE_LANGUAGES,
     isSupportedLanguage,
-    translateBatch,
     translateText,
+    translateBatch,
 } from "../services/translation";
 
 /* Multilingual site (Kinyarwanda, English, French, Kiswahili).
@@ -108,7 +114,15 @@ const writeDictCache = (language, dict) => {
 };
 
 export const LanguageProvider = ({ children }) => {
+    const auth = useContext(AuthContext);
+    const accountUser = auth?.user || getStoredUser();
+
     const [language, setLanguageState] = useState(() => {
+        /* A signed-in account's saved language wins so the reader's choice
+           follows them to any device, not just the one they picked it on. */
+        const accountLanguage = (auth?.user || getStoredUser())?.language;
+        if (isSupportedLanguage(accountLanguage)) return accountLanguage;
+
         try {
             const stored = window.localStorage.getItem(STORAGE_KEY);
             return isSupportedLanguage(stored) ? stored : "rw";
@@ -118,6 +132,14 @@ export const LanguageProvider = ({ children }) => {
     });
     const [translating, setTranslating] = useState(false);
     const [dictionary, setDictionary] = useState(() => (language === "en" ? en : rw));
+
+    /* Adopt the account language once the session is restored/logged in. */
+    useEffect(() => {
+        if (!isSupportedLanguage(accountUser?.language)) return;
+        setLanguageState((current) =>
+            current === accountUser.language ? current : accountUser.language
+        );
+    }, [accountUser?.language]);
 
     useEffect(() => {
         try {
@@ -187,7 +209,17 @@ export const LanguageProvider = ({ children }) => {
     );
 
     const setLanguage = useCallback((next) => {
-        if (isSupportedLanguage(next)) setLanguageState(next);
+        if (!isSupportedLanguage(next)) return;
+
+        setLanguageState(next);
+
+        /* Mirror the choice onto the account so it is available online on
+           other devices. Anonymous visitors simply keep localStorage. */
+        if (getToken()) {
+            persistLanguage(next).catch(() => {
+                /* offline or endpoint unavailable: keep the local choice */
+            });
+        }
     }, []);
 
     const translate = useCallback(

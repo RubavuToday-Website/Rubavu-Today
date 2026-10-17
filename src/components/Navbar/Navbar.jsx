@@ -1067,9 +1067,6 @@ const NewsPostsLayout = ({
                 {translateCategory(activeCategory, language)}
               </h1>
             </div>
-            <span className="font-body text-[10px] font-bold uppercase tracking-wider text-slate-400">
-              {sortedNewest.length} {language === "rw" ? "inkuru" : "posts"}
-            </span>
           </div>
 
           <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 lg:grid-cols-3">

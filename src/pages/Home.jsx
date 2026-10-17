@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { getPosts, getAdvertisements } from "../services/api";
 import { SiteSEO } from "../components/SEO/SEO";
@@ -9,12 +9,12 @@ import AdBanner from "../components/common/AdBanner";
 import AmakuruDepartmentNav from "../components/common/AmakuruDepartmentNav";
 import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../utils/images";
-import { ChevronDown } from "lucide-react";
 import {
   filterAmakuruPosts,
   getAmakuruDepartmentBySlug,
   isAmakuruCategory,
 } from "../utils/amakuruDepartments";
+import { ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 
 
 const formatDate = (dateStr, language) => {
@@ -35,8 +35,9 @@ const Home = () => {
   const [visibleCount, setVisibleCount] = useState(16);
   const [postGridColumns, setPostGridColumns] = useState(4);
   const [mediaSlideIndex, setMediaSlideIndex] = useState(0);
-  const [showMedia, setShowMedia] = useState(true);
   const [mediaSearch, setMediaSearch] = useState("");
+  const amakuruRailRef = useRef(null);
+  const archiveRailRef = useRef(null);
   const location = useLocation();
   const { language, t } = useLanguage();
   const pathSegments = location.pathname.split("/").filter(Boolean);
@@ -94,18 +95,10 @@ const Home = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const nextQuery = params.get("q") || "";
-    const nextCategory = params.get("category") || "";
-    const isMediaPage = location.pathname === "/media" || location.pathname.includes("/media");
 
     setQuery(nextQuery);
     setVisibleCount(16);
-
-    if (isMediaPage || nextCategory || nextQuery || isAmakuruPage) {
-      setShowMedia(false);
-    } else if (!nextCategory && !nextQuery && !location.pathname.includes("/post/")) {
-      setShowMedia(true);
-    }
-  }, [location.search, location.pathname, isAmakuruPage]);
+  }, [location.search, location.pathname]);
 
   const filteredPosts = useMemo(() => {
     return filterAmakuruPosts(posts, {
@@ -145,41 +138,48 @@ const Home = () => {
     return allRecent.slice(0, 6);
   }, [displayPosts]);
 
-  const filteredMediaPosts = useMemo(() => {
+  const allPostSearchResults = useMemo(() => {
     const term = mediaSearch.trim().toLowerCase();
-    const sourcePosts = mediaPosts.length >= 3 ? mediaPosts : sidebarPosts;
+    if (!term) return [];
 
-    if (!term) return sourcePosts;
+    return [...posts]
+      .filter((post) => {
+        const searchableText = [
+          post.title,
+          post.summary,
+          post.description,
+          post.content,
+          post.category,
+          post.amakuru_department,
+          post.tags,
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
 
-    return sourcePosts.filter((post) => {
-      const combined = [
-        post.title,
-        post.summary,
-        post.category,
-        post.youtube_url,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return combined.includes(term);
-    });
-  }, [mediaPosts, sidebarPosts, mediaSearch]);
-  const mediaCarouselPosts = filteredMediaPosts.length > 0 ? filteredMediaPosts : sidebarPosts;
+        return searchableText.includes(term);
+      })
+      .sort((a, b) => new Date(b.createdDate || 0) - new Date(a.createdDate || 0))
+      .map((post) => ({
+        ...post,
+        articleHref: getArticleUrl(post),
+      }));
+  }, [posts, mediaSearch]);
+  const mediaCarouselPosts = mediaPosts.length >= 3 ? mediaPosts : sidebarPosts;
   const activeMediaSlideIndex = mediaCarouselPosts.length
     ? mediaSlideIndex % mediaCarouselPosts.length
     : 0;
 
   useEffect(() => {
-    if (!showMedia || mediaCarouselPosts.length < 2) return undefined;
+    if (mediaCarouselPosts.length < 2) return undefined;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return undefined;
 
     const timer = window.setInterval(() => {
       setMediaSlideIndex((index) => (index + 1) % mediaCarouselPosts.length);
-    }, 5000);
+    }, 8000);
 
     return () => window.clearInterval(timer);
-  }, [mediaCarouselPosts.length, showMedia]);
+  }, [mediaCarouselPosts.length]);
 
   const isSearching = query.trim().length > 0;
   const visiblePostCount = Math.min(
@@ -188,27 +188,16 @@ const Home = () => {
       + Math.ceil(Math.max(0, visibleCount - featuredStories.length) / postGridColumns) * postGridColumns
   );
   const visiblePosts = displayPosts.slice(0, visiblePostCount);
+  const archiveStories = displayPosts.slice(visiblePostCount);
   const gridPosts = visiblePosts.slice(featuredStories.length);
-  const tickerInsertAfter = Math.floor(
-    Math.floor(gridPosts.length / 2) / postGridColumns
-  ) * postGridColumns;
   const hasMore = sortedPosts.length > visiblePostCount;
-  const showInlineStoryTicker = gridPosts.length >= postGridColumns * 2
-    && tickerInsertAfter > 0
-    && tickerInsertAfter < gridPosts.length;
-  const firstGridPosts = showInlineStoryTicker
-    ? gridPosts.slice(0, tickerInsertAfter)
-    : gridPosts;
-  const trailingGridPosts = showInlineStoryTicker
-    ? gridPosts.slice(tickerInsertAfter)
-    : [];
-  const finalGridPosts = showInlineStoryTicker ? trailingGridPosts : firstGridPosts;
-  const incompleteFinalRow = !hasMore && finalGridPosts.length % postGridColumns > 0;
-  const finalCardSpan = incompleteFinalRow
-    ? postGridColumns - (finalGridPosts.length % postGridColumns) + 1
-    : 1;
 
-  const handleLoadMore = () => setVisibleCount((prev) => prev + 8);
+  const scrollPostRail = (railRef, direction) => {
+    const rail = railRef.current;
+    if (!rail) return;
+    rail.scrollBy({ left: direction * rail.clientWidth, behavior: "smooth" });
+  };
+
   const moveMediaSlides = (direction) => {
     if (!mediaCarouselPosts.length) return;
     setMediaSlideIndex((index) => (
@@ -426,48 +415,83 @@ const Home = () => {
 
   const MediaSidebar = () => {
     const sourcePosts = mediaCarouselPosts;
-  const visibleMediaPosts = sourcePosts.length
-    ? Array.from(
-      { length: Math.min(5, sourcePosts.length) },
-      (_, offset) => sourcePosts[(activeMediaSlideIndex + offset) % sourcePosts.length]
-    )
-    : [];
+    const visibleMediaPosts = sourcePosts.length
+      ? Array.from(
+        { length: Math.min(3, sourcePosts.length) },
+        (_, offset) => sourcePosts[(activeMediaSlideIndex + offset) % sourcePosts.length]
+      )
+      : [];
 
     return (
-      <aside className="lg:sticky lg:top-24 lg:self-start">
+      <aside className="w-full">
         <div className="rounded-xl border border-slate-200 bg-white p-2 shadow-sm sm:p-2.5">
-          <button
-            type="button"
-            onClick={() => setShowMedia((prev) => !prev)}
-            className="flex w-full items-center justify-between gap-2 rounded-md border border-slate-900 bg-slate-950 px-2.5 py-1.5 sm:px-3 sm:py-2 font-body text-[8px] xs:text-[9px] sm:text-[10px] font-black uppercase tracking-[0.14em] sm:tracking-[0.16em] text-white shadow-sm transition hover:border-red-600 hover:bg-red-600"
-          >
-            <span className="truncate">PHOTOS &amp; VIDEOS</span>
-            <span className="flex shrink-0 items-center gap-1 text-[10px] sm:text-[12px] leading-none">
-              <span aria-hidden="true">{showMedia ? "−" : "+"}</span>
-              {showMedia ? (
-                <span aria-label="Leave media panel" className="text-[9px] sm:text-[10px]">X</span>
-              ) : (
-                <span aria-label="Return to media panel" className="text-[9px] sm:text-[10px]">↺</span>
-              )}
-            </span>
-          </button>
+          <div className="flex w-full items-center rounded-md border border-slate-900 bg-slate-950 px-2.5 py-1.5 font-body text-[8px] font-black uppercase tracking-[0.14em] text-white shadow-sm sm:px-3 sm:py-2 sm:text-[10px] sm:tracking-[0.16em]">
+            PHOTOS &amp; VIDEOS
+          </div>
 
-          {showMedia && (
-            <div className="mt-3">
-              <div className="mb-3 flex items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 sm:px-2.5 sm:py-2">
-                <svg viewBox="0 0 24 24" aria-hidden="true" className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-slate-500 fill-none stroke-current stroke-2">
-                  <circle cx="11" cy="11" r="6"></circle>
-                  <path d="M16 16l5 5"></path>
-                </svg>
+            <div className="mt-2">
+              <div role="search" className="mb-2 flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 shadow-sm transition focus-within:border-red-500 focus-within:ring-2 focus-within:ring-red-100 sm:px-3">
+                <Search size={15} aria-hidden="true" className="shrink-0 text-slate-400" />
+                <label htmlFor="sidebar-post-search" className="sr-only">
+                  {language === "rw" ? "Shakisha inkuru zose" : "Search all posts"}
+                </label>
                 <input
-                  type="text"
+                  id="sidebar-post-search"
+                  type="search"
                   value={mediaSearch}
                   onChange={(e) => setMediaSearch(e.target.value)}
-                  placeholder="Shakisha amafoto / video..."
-                  className="w-full border-0 bg-transparent text-[9px] xs:text-[10px] text-slate-700 placeholder:text-slate-400 focus:outline-none"
+                  placeholder={language === "rw" ? "Shakisha inkuru zose..." : "Search all posts..."}
+                  aria-controls="sidebar-post-search-results"
+                  className="min-w-0 flex-1 border-0 bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none"
                 />
+                {mediaSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setMediaSearch("")}
+                    aria-label={language === "rw" ? "Siba amagambo yo gushakisha" : "Clear search"}
+                    className="grid h-6 w-6 shrink-0 place-items-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-red-200"
+                  >
+                    <X size={14} aria-hidden="true" />
+                  </button>
+                )}
               </div>
 
+              {mediaSearch.trim() ? (
+                <div
+                  id="sidebar-post-search-results"
+                  className="max-h-80 overflow-y-auto rounded-md border border-slate-200 bg-white"
+                >
+                  <p className="border-b border-slate-100 px-2.5 py-2 font-body text-[9px] font-semibold text-slate-500" aria-live="polite">
+                    {allPostSearchResults.length} {language === "rw" ? "ibyabonetse" : "results"}
+                  </p>
+                  {allPostSearchResults.length > 0 ? (
+                    <ul className="divide-y divide-slate-100">
+                      {allPostSearchResults.map((post) => (
+                        <li key={post.id || post._id || post.title}>
+                          <Link
+                            to={post.articleHref}
+                            className="block px-2.5 py-2 transition hover:bg-red-50 focus:bg-red-50 focus:outline-none"
+                          >
+                            {post.category && (
+                              <span className="mb-0.5 block truncate font-body text-[8px] font-bold uppercase tracking-wider text-red-700">
+                                {translateCategory(post.category, language)}
+                              </span>
+                            )}
+                            <span className="line-clamp-2 font-body text-xs font-semibold leading-snug text-slate-800">
+                              {post.title}
+                            </span>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="px-2.5 py-3 font-body text-[10px] text-slate-500">
+                      {language === "rw" ? "Nta nkuru zihuye n'ayo magambo." : "No matching posts found."}
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <>
               {sourcePosts.length > 3 && (
                 <div className="mb-2 flex items-center justify-between px-0.5">
                   <span className="font-body text-[9px] font-medium text-slate-500">
@@ -494,28 +518,28 @@ const Home = () => {
                 </div>
               )}
 
-              <div className="space-y-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
                 {visibleMediaPosts.length > 0 ? (
                   visibleMediaPosts.map((post, index) => (
                     <div
                       key={`${post.id || post._id || post.title}-${activeMediaSlideIndex}`}
-                      className="home-media-slide-up overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm"
+                      className="home-media-slide-up flex h-24 overflow-hidden rounded-lg border border-slate-200 bg-slate-50 shadow-sm sm:h-28"
                       style={{ animationDelay: `${index * 70}ms` }}
                     >
-                      <Link to={post.articleHref} className="block overflow-hidden bg-slate-100">
-                        <div className="aspect-[16/10] overflow-hidden">
+                      <Link to={post.articleHref} className="block h-full w-24 shrink-0 overflow-hidden bg-slate-100 sm:w-28">
+                        <div className="h-full overflow-hidden">
                           <OptimizedImage
                             src={post.image || "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=900&q=80"}
                             alt={post.title}
                             widths={RESOLUTION_WIDTHS.THUMB}
-                            sizes="(max-width: 1024px) 40vw, 300px"
+                            sizes="112px"
                             loading="lazy"
                             className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
                           />
                         </div>
                       </Link>
 
-                      <div className="p-2">
+                      <div className="flex min-w-0 flex-1 flex-col justify-center p-2">
                         {(isAmakuruCategory(post.category) && post.amakuru_department) || post.category ? (
                           <span className="news-category mb-1 block truncate font-body uppercase tracking-wider">
                             {isAmakuruCategory(post.category) && post.amakuru_department
@@ -525,7 +549,7 @@ const Home = () => {
                         ) : null}
                         <Link
                           to={post.articleHref}
-                          className="news-headline-card block font-body font-bold leading-snug text-slate-900 transition-colors hover:text-red-600"
+                          className="news-headline-card line-clamp-3 block font-body text-[11px] font-bold leading-snug text-slate-900 transition-colors hover:text-red-600"
                         >
                           {post.title}
                         </Link>
@@ -551,8 +575,9 @@ const Home = () => {
                   </div>
                 )}
               </div>
+                </>
+              )}
             </div>
-          )}
         </div>
       </aside>
     );
@@ -632,9 +657,7 @@ const Home = () => {
                   : selectedCategory || ""}
               />
 
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-[260px_minmax(0,1fr)] lg:items-start lg:gap-5">
-                <MediaSidebar />
-
+              <div className="space-y-4">
                 <div className="min-w-0">
                   {advertisements[0] && advertisements[0].image && (
                     <div className="my-4 xs:my-5 sm:my-6 flex justify-center print:hidden">
@@ -642,97 +665,50 @@ const Home = () => {
                     </div>
                   )}
 
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                    {firstGridPosts.map((post, index) => (
-                      <PostCard
-                        key={post.id || post._id}
-                        post={post}
-                        spanColumns={
-                          incompleteFinalRow
-                          && !showInlineStoryTicker
-                          && index === firstGridPosts.length - 1
-                            ? finalCardSpan
-                            : 1
-                        }
-                      />
-                    ))}
-                  </div>
-
-                  {showInlineStoryTicker && (
+                  {gridPosts.length > 0 && (
                     <section
-                      aria-label={language === "rw" ? "Izindi nkuru" : "More stories"}
-                      className="my-3 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm sm:my-4"
+                      aria-label={language === "rw" ? "Amakuru" : "News"}
+                      className="mb-4"
                     >
-                      <div className="flex items-center gap-2 border-b border-slate-100 px-3 py-2.5 sm:px-4">
-                        <span className="h-4 w-1 rounded-full bg-[#B3261E]" />
-                        <h3 className="font-masthead text-xs font-extrabold uppercase tracking-wide text-slate-800">
-                          {language === "rw" ? "Izindi nkuru" : "More stories"}
-                        </h3>
-                        <span className="font-body text-[9px] text-slate-500">
-                          {language === "rw" ? "Amakuru agezweho" : "Latest updates"}
-                        </span>
-                      </div>
-                      <div className="home-story-viewport overflow-hidden py-2.5">
-                        <div className="home-story-marquee flex w-max">
-                          {[0, 1].map((copy) => (
-                            <div
-                              key={copy}
-                              className="flex shrink-0 gap-3 pr-3"
-                              aria-hidden={copy === 1 ? "true" : undefined}
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <h2 className="font-masthead text-sm font-extrabold uppercase tracking-tight text-slate-900">
+                          {language === "rw" ? "Amakuru" : "News"}
+                        </h2>
+                        {gridPosts.length > 1 && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => scrollPostRail(amakuruRailRef, -1)}
+                              aria-label={language === "rw" ? "Subira ku makuru abanza" : "Previous news posts"}
+                              className="grid h-7 w-7 place-items-center rounded-full border border-slate-300 bg-white text-slate-600 transition hover:border-red-500 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
                             >
-                              {displayPosts
-                                .slice(featuredStories.length, featuredStories.length + 8)
-                                .map((story) => (
-                                  <Link
-                                    key={`${copy}-${story.id || story._id || story.title}`}
-                                    to={getArticleUrl(story)}
-                                    tabIndex={copy === 1 ? -1 : undefined}
-                                    className="group flex w-[250px] items-center gap-2.5 rounded-md border border-slate-100 bg-slate-50 p-2 transition-colors hover:border-red-200 hover:bg-red-50 sm:w-[290px]"
-                                  >
-                                    <span className="h-14 w-[76px] shrink-0 overflow-hidden rounded bg-slate-200 sm:h-16 sm:w-[88px]">
-                                      <OptimizedImage
-                                        src={story.image || "/Rubavu.jpeg"}
-                                        alt=""
-                                        widths={RESOLUTION_WIDTHS.THUMB}
-                                        sizes="88px"
-                                        loading="lazy"
-                                        decoding="async"
-                                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                                      />
-                                    </span>
-                                    <span className="min-w-0">
-                                      <span className="line-clamp-2 font-masthead text-xs font-bold leading-snug text-slate-800 transition-colors group-hover:text-[#B3261E] sm:text-sm">
-                                        {story.title}
-                                      </span>
-                                      {story.createdDate && (
-                                        <time className="mt-1 block font-body text-[9px] text-slate-500">
-                                          {formatDate(story.createdDate, language)}
-                                        </time>
-                                      )}
-                                    </span>
-                                  </Link>
-                                ))}
-                            </div>
-                          ))}
-                        </div>
+                              <ChevronLeft size={15} aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => scrollPostRail(amakuruRailRef, 1)}
+                              aria-label={language === "rw" ? "Jya ku makuru akurikira" : "Next news posts"}
+                              className="grid h-7 w-7 place-items-center rounded-full border border-slate-300 bg-white text-slate-600 transition hover:border-red-500 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
+                            >
+                              <ChevronRight size={15} aria-hidden="true" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        ref={amakuruRailRef}
+                        className="flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                      >
+                        {gridPosts.map((post) => (
+                          <div
+                            key={post.id || post._id}
+                            className="w-[88%] shrink-0 snap-start sm:w-[calc((100%-0.5rem)/2)] lg:w-[calc((100%-1.5rem)/4)]"
+                          >
+                            <PostCard post={post} />
+                          </div>
+                        ))}
                       </div>
                     </section>
-                  )}
-
-                  {showInlineStoryTicker && (
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                      {trailingGridPosts.map((post, index) => (
-                        <PostCard
-                          key={post.id || post._id}
-                          post={post}
-                          spanColumns={
-                            incompleteFinalRow && index === trailingGridPosts.length - 1
-                              ? finalCardSpan
-                              : 1
-                          }
-                        />
-                      ))}
-                    </div>
                   )}
 
                   {advertisements[1] && advertisements[1].image && hasMore && (
@@ -741,20 +717,79 @@ const Home = () => {
                     </div>
                   )}
 
-                  {hasMore && (
-                    <div className="flex justify-center py-2">
-                      <button
-                        type="button"
-                        onClick={handleLoadMore}
-                        aria-label={language === "rw" ? "Soma andi makuru" : "Load more stories"}
-                        title={language === "rw" ? "Soma andi makuru" : "Load more stories"}
-                        className="grid h-10 w-10 place-items-center rounded-full border border-slate-300 bg-white text-slate-800 shadow-sm transition hover:border-red-600 hover:bg-red-600 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-200"
+                  {archiveStories.length > 0 && (
+                    <section
+                      aria-label={language === "rw" ? "Izindi nkuru" : "More stories"}
+                      className="overflow-hidden bg-slate-950 px-3 py-4 text-white sm:px-5 sm:py-5"
+                    >
+                      <div className="mb-3 flex items-end justify-between gap-3 border-b border-slate-700 pb-2">
+                        <div>
+                          <p className="font-body text-[9px] font-bold uppercase tracking-[0.16em] text-red-400">
+                            {language === "rw" ? "Amakuru" : "News archive"}
+                          </p>
+                          <h2 className="font-masthead text-base font-extrabold sm:text-lg">
+                            {language === "rw" ? "Izindi nkuru" : "More stories"}
+                          </h2>
+                        </div>
+                        {archiveStories.length > 1 && (
+                          <div className="flex items-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => scrollPostRail(archiveRailRef, -1)}
+                              aria-label={language === "rw" ? "Subira ku nkuru zabanje" : "Previous more stories"}
+                              className="grid h-7 w-7 place-items-center rounded-full border border-slate-700 text-slate-300 transition hover:border-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-400"
+                            >
+                              <ChevronLeft size={15} aria-hidden="true" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => scrollPostRail(archiveRailRef, 1)}
+                              aria-label={language === "rw" ? "Jya ku zindi nkuru" : "Next more stories"}
+                              className="grid h-7 w-7 place-items-center rounded-full border border-slate-700 text-slate-300 transition hover:border-red-500 hover:text-white focus:outline-none focus:ring-2 focus:ring-red-400"
+                            >
+                              <ChevronRight size={15} aria-hidden="true" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div
+                        ref={archiveRailRef}
+                        className="flex snap-x snap-mandatory gap-2 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
                       >
-                        <ChevronDown className="h-5 w-5" aria-hidden="true" />
-                      </button>
-                    </div>
+                        {archiveStories.map((story) => (
+                          <Link
+                            key={story.id || story._id || story.title}
+                            to={getArticleUrl(story)}
+                            className="group relative aspect-[4/3] w-[88%] shrink-0 snap-start overflow-hidden bg-slate-800 sm:w-[calc((100%-0.5rem)/2)] lg:w-[calc((100%-1.5rem)/4)]"
+                          >
+                            <OptimizedImage
+                              src={story.image || "/Rubavu.jpeg"}
+                              alt={story.title || ""}
+                              widths={RESOLUTION_WIDTHS.CARD}
+                              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                              loading="lazy"
+                              decoding="async"
+                              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                            <span className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/35 to-transparent" />
+                            <span className="absolute inset-x-0 bottom-0 p-3">
+                              {story.category && (
+                                <span className="mb-1 block truncate font-body text-[8px] font-bold uppercase tracking-wider text-red-300">
+                                  {translateCategory(story.category, language)}
+                                </span>
+                              )}
+                              <span className="line-clamp-3 font-masthead text-sm font-bold leading-snug text-white transition-colors group-hover:text-red-100">
+                                {story.title}
+                              </span>
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    </section>
                   )}
+
                 </div>
+                <MediaSidebar />
               </div>
             </div>
           ) : (

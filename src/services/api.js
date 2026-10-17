@@ -425,6 +425,29 @@ export async function changeMyPassword(
   });
 }
 
+export async function updateLanguage(language) {
+  const data = await request("/api/profile/language", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ language }),
+  });
+
+  /* Keep the cached session in sync so a later reload keeps the choice
+     even before the server round-trip completes. */
+  const storedUser = getStoredUser();
+
+  if (storedUser) {
+    setAuthStorage(getToken(), {
+      ...storedUser,
+      language: language,
+    });
+  }
+
+  return data;
+}
+
 export async function changeMyEmail(
   newEmail,
   currentPassword
@@ -1792,6 +1815,7 @@ const api = {
   getCurrentUser,
   changeMyPassword,
   changeMyEmail,
+  updateLanguage,
   uploadProfileImage,
   updateProfile,
   getToken,

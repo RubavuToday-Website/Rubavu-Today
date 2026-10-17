@@ -194,7 +194,7 @@ a {
 @keyframes homeMediaSlideUp {
   from {
     opacity: 0;
-    transform: translateY(22px);
+    transform: translateY(8px);
   }
 
   to {
@@ -204,7 +204,7 @@ a {
 }
 
 .home-media-slide-up {
-  animation: homeMediaSlideUp 420ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation: homeMediaSlideUp 800ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
 
 @keyframes homeStoryMarquee {
