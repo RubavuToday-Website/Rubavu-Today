@@ -41,6 +41,7 @@ import {
 import { DashboardLayout } from "../../components/dashboard";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import ArticleEditor from "../../components/article/ArticleEditor";
+import YouTubeEmbeds from "../../components/article/YouTubeEmbeds";
 import OptimizedImage from "../../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../../utils/images";
 import { isAmakuruCategory } from "../../utils/amakuruDepartments";
@@ -48,6 +49,34 @@ import { MessageSquare, Eye, EyeOff, ChevronDown, ChevronRight, Radio } from "lu
 import { useNavigate } from "react-router-dom";
 
 const API_URL = API_ROOT;
+
+const collectYoutubeUrls = (post) => {
+    if (!post) return [];
+
+    const raw = post.youtube_urls ?? post.youtubeUrls;
+    let list = [];
+
+    if (Array.isArray(raw)) {
+        list = raw;
+    } else if (typeof raw === "string" && raw.trim()) {
+        try {
+            const parsed = JSON.parse(raw);
+            list = Array.isArray(parsed) ? parsed : [];
+        } catch {
+            list = [];
+        }
+    }
+
+    const fallback = post.youtube_url || post.youtubeUrl || post.youtube;
+
+    return Array.from(
+        new Set(
+            [...list, ...(fallback ? [fallback] : [])]
+                .map((value) => String(value || "").trim())
+                .filter(Boolean)
+        )
+    ).slice(0, 2);
+};
 
 const DEPARTMENTS = [
     { name: "Amakuru", icon: "📰", color: "blue" },
@@ -721,6 +750,7 @@ const AdminDashboard = ({
             title: post.title || "",
             description: post.description || post.content || "",
             youtube_url: post.youtube_url || "",
+            youtube_urls: post.youtube_urls || post.youtubeUrls || null,
             image: post.image || null,
             category: post.category || DEPARTMENTS[0].name,
             amakuru_department: post.amakuru_department || "",
@@ -1322,31 +1352,31 @@ const AdminDashboard = ({
         {
             label: "MAIN",
             items: [
-                { icon: <span>▦</span>, label: "Imbonerahamwe", path: "/admin/dashboard" },
+                { icon: <span>▦</span>, label: "Dashboard", path: "/admin/dashboard" },
             ],
         },
         {
             label: "INKURU",
             items: [
                 { icon: <span>⏳</span>, label: "Zitegereje gusuzumwa", path: "/admin/posts/pending", badge: statistics.pending },
-                { icon: <span>✓</span>, label: "Inkuru zasohotse", path: "/admin/posts/published" },
+                { icon: <span>✓</span>, label: "Published Articles", path: "/admin/posts/published" },
                 { icon: <span>✕</span>, label: "Zanzwe", path: "/admin/posts/rejected" },
             ],
         },
         {
             label: "IMICUNGIRE",
             items: [
-                { icon: <span>👤</span>, label: "Abakozi", path: "/admin/employees" },
-                { icon: <span>🛡️</span>, label: "Abanditsi Bakuru", path: "/admin/chief-editors" },
+                { icon: <span>👤</span>, label: "Employees", path: "/admin/employees" },
+                { icon: <span>🛡️</span>, label: "Chief Editors", path: "/admin/chief-editors" },
                 { icon: <span>👥</span>, label: "Konti n'Inkuru", path: "/admin/accounts" },
-                { icon: <span>📊</span>, label: "Imikorere y'Abakozi", path: "/admin/performance" },
+                { icon: <span>📊</span>, label: "Imikorere y'Employees", path: "/admin/performance" },
             ],
         },
         {
             label: "IBINDI",
             items: [
                 { icon: <span>📢</span>, label: "Kwamamaza", path: "/admin/advertisements" },
-                { icon: <span>📥</span>, label: "Kuramo raporo", path: "/admin/reports" },
+                { icon: <span>📥</span>, label: "Reports", path: "/admin/reports" },
                 { icon: <span>🧹</span>, label: "Text Cleaner", path: "/admin/text-cleaner" },
             ],
         },
@@ -1477,11 +1507,11 @@ const AdminDashboard = ({
 
                         <div className="min-w-0 flex-1">
                             <p className="hidden text-[11px] font-medium text-slate-400 sm:block">
-                                Ubwanditsi / Imbonerahamwe
+                                Ubwanditsi / Dashboard
                             </p>
 
                             <h2 className="truncate text-sm font-bold text-slate-900 sm:text-lg">
-                                Imbonerahamwe y'ubwanditsi
+                                Dashboard y'ubwanditsi
                             </h2>
                         </div>
 
@@ -1512,14 +1542,14 @@ const AdminDashboard = ({
                                 onClick={() => navigate("/admin/change-password")}
                                 className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 sm:px-3"
                             >
-                                Hindura ijambobanga
+                                Change Password
                             </button>
 
                             <button
                                 onClick={() => navigate("/admin/change-email")}
                                 className="rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-sm font-medium text-slate-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-200 sm:px-3"
                             >
-                                Hindura imeyili
+                                Change Email
                             </button>
 
                             <button
@@ -1921,7 +1951,7 @@ const AdminDashboard = ({
                             <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/60 px-5 py-4">
                                 <div className="min-w-0">
                                     <h3 className="text-base font-black text-slate-900">
-                                        Hindura imeyili
+                                        Change Email
                                     </h3>
                                     <p className="mt-0.5 text-xs text-slate-400">
                                         Emeza ijambo ry'ibanga ririho mbere yo guhindura imeyili.
@@ -1972,7 +2002,7 @@ const AdminDashboard = ({
                                         type="submit"
                                         className="w-full rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:bg-blue-700 sm:w-auto"
                                     >
-                                        Hindura imeyili
+                                        Change Email
                                     </button>
                                 </div>
                             </form>
@@ -2030,7 +2060,7 @@ const AdminDashboard = ({
                             <div className="flex items-start justify-between gap-4">
                                 <div>
                                     <p className="text-xs font-bold uppercase tracking-wide text-blue-600">Imicungire</p>
-                                    <h2 className="mt-1 text-lg font-black text-slate-900">📊 Imikorere y'Abakozi</h2>
+                                    <h2 className="mt-1 text-lg font-black text-slate-900">📊 Imikorere y'Employees</h2>
                                     <p className="mt-1 text-sm text-slate-600">Reba imikorere y'abakozi n'abanditsi bakuru.</p>
                                 </div>
                                 <span className="shrink-0 rounded-xl bg-blue-600 px-3 py-2 text-xs font-bold text-white">Reba Imikorere →</span>
@@ -2435,7 +2465,7 @@ const AdminDashboard = ({
                                                     POST_STATUSES.ALL
                                                 )
                                             }
-                                            label="Zose"
+                                            label="All"
                                             count={statistics.total}
                                             color="slate"
                                         />
@@ -2729,7 +2759,7 @@ const AdminDashboard = ({
 
                                     <QuickAction
                                         icon="📥"
-                                        label="Kuramo raporo"
+                                        label="Reports"
                                         onClick={exportPosts}
                                     />
                                 </div>
@@ -3067,7 +3097,7 @@ const AccountsPanel = ({
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-1">
 
                 <AccountSection
-                    title="Abakozi"
+                    title="Employees"
                     count={employees.length}
                     items={employees}
                     emptyText="Nta baakozi bihari"
@@ -3083,7 +3113,7 @@ const AccountsPanel = ({
 
 
                 <AccountSection
-                    title="Abanditsi Bakuru"
+                    title="Chief Editors"
                     count={chiefEditors.length}
                     items={chiefEditors}
                     emptyText="Nta banditsi bakuru bihari"
@@ -3874,19 +3904,29 @@ const PostDetailModal = ({
                         {post.description || post.content || "Nta bisobanuro bihari."}
                     </div>
 
-                    {(post.youtube_url || post.youtubeUrl) && (
+                    {collectYoutubeUrls(post).length > 0 && (
                         <div className="mt-6 rounded-2xl bg-slate-50 p-4">
                             <p className="text-xs font-black uppercase tracking-wide text-slate-400">
                                 YouTube
                             </p>
-                            <a
-                                href={post.youtube_url || post.youtubeUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="mt-2 block break-all text-sm font-bold text-blue-600 hover:underline"
-                            >
-                                {post.youtube_url || post.youtubeUrl}
-                            </a>
+                            <YouTubeEmbeds
+                                urls={collectYoutubeUrls(post)}
+                                title={post.title || "YouTube video"}
+                                className="mt-3"
+                            />
+                            <div className="mt-3 space-y-1">
+                                {collectYoutubeUrls(post).map((url, index) => (
+                                    <a
+                                        key={`yt-link-${index}`}
+                                        href={url}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="block break-all text-sm font-bold text-blue-600 hover:underline"
+                                    >
+                                        {url}
+                                    </a>
+                                ))}
+                            </div>
                         </div>
                     )}
 

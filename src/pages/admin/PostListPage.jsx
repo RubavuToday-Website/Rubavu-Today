@@ -265,7 +265,7 @@ function PostListPage() {
                         </div>
 
                         {/* Pagination */}
-                        {totalPages > 1 && (
+                        {totalPages > 1 && (  
                             <div className="mt-6 flex items-center justify-center gap-2">
                                 <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)}
                                     className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 disabled:opacity-40 hover:bg-slate-50">

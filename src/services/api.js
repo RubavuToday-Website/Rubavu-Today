@@ -128,6 +128,29 @@ export const normalizePost = (post) => ({
   youtube_url:
     post.youtube_url || null,
 
+  youtube_urls: (() => {
+    const raw = post.youtube_urls ?? post.youtubeUrls;
+    let list = [];
+
+    if (Array.isArray(raw)) {
+      list = raw;
+    } else if (typeof raw === "string" && raw.trim()) {
+      try {
+        const parsed = JSON.parse(raw);
+        list = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        list = [];
+      }
+    }
+
+    const fallback = post.youtube_url || post.youtubeUrl;
+    const combined = [...list, ...(fallback ? [fallback] : [])]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    return Array.from(new Set(combined)).slice(0, 2);
+  })(),
+
   author:
     post.author &&
       typeof post.author === "object"
@@ -922,14 +945,31 @@ const buildPostFormData = (postData) => {
     );
   }
 
-  if (
-    postData.youtube_url !== undefined &&
-    postData.youtube_url !== null
-  ) {
-    formData.append(
-      "youtube_url",
-      postData.youtube_url
-    );
+  const youtubeList = (() => {
+    const raw = postData.youtube_urls;
+    let list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+
+    list = list
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    if (
+      postData.youtube_url !== undefined &&
+      postData.youtube_url !== null &&
+      String(postData.youtube_url).trim()
+    ) {
+      list.unshift(String(postData.youtube_url).trim());
+    }
+
+    return Array.from(new Set(list)).slice(0, 2);
+  })();
+
+  if (youtubeList[0]) {
+    formData.append("youtube_url", youtubeList[0]);
+  }
+
+  if (youtubeList[1]) {
+    formData.append("youtube_url_2", youtubeList[1]);
   }
 
   if (

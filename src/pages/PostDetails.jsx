@@ -12,10 +12,14 @@ import rubavuLogo from "../Rubavu.jpeg";
 import { API_ROOT as API_URL, getPostById, getPostBySlug, getPosts, getNextArticle, formatAuthorName, getPostAuthorNickname, commitCommentReaction } from "../services/api";
 import { ArticleSEO } from "../components/SEO/SEO";
 import ArticleRenderer from "../components/article/ArticleRenderer";
+import YouTubeEmbeds from "../components/article/YouTubeEmbeds";
+import ReadingTools from "../components/article/ReadingTools";
+import ArticleReactions from "../components/article/ArticleReactions";
 import { getPostSlug, getArticleUrl } from "../utils/slug";
 import { formatRelativeTime } from "../utils/time";
 import { getYouTubeEmbedUrl } from "../utils/video";
 import { useLanguage, translateCategory } from "../context/LanguageContext";
+import { useTranslatedPosts } from "../hooks/useTranslatedPosts";
 import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS, isCloudinaryUrl } from "../utils/images";
 import { isAmakuruCategory, getAmakuruDepartmentSlug } from "../utils/amakuruDepartments";
@@ -56,7 +60,7 @@ export default function PostDetails() {
   const { id, slug } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  const { language, t } = useLanguage();
+  const { language, t, translateMany } = useLanguage();
 
   const [post, setPost] = useState(null);
   const [originalPost, setOriginalPost] = useState(null);
@@ -68,6 +72,12 @@ export default function PostDetails() {
   const [reloadKey, setReloadKey] = useState(0);
   const [commentStatus, setCommentStatus] = useState("");
   const [profileOpen, setProfileOpen] = useState(false);
+  const [translatedContent, setTranslatedContent] = useState({
+    title: "",
+    summary: "",
+    paragraphs: [],
+    blocks: [],
+  });
 
   // "Soma Andi Makuru" — the next published article in reading order
   // (newest -> oldest), resolved by the server so every approved
@@ -75,6 +85,12 @@ export default function PostDetails() {
   const [nextArticle, setNextArticle] = useState(null);
   const [nextLoading, setNextLoading] = useState(true);
   const [nextError, setNextError] = useState("");
+
+  const translatedAllPosts = useTranslatedPosts(allPosts);
+  const translatedNextArticleList = useTranslatedPosts(
+    nextArticle ? [nextArticle] : []
+  );
+  const displayNextArticle = translatedNextArticleList[0] || nextArticle;
 
   const [name, setName] = useState("");
   const [commentText, setCommentText] = useState("");
@@ -500,32 +516,133 @@ export default function PostDetails() {
     }
   }, [post]);
 
-  const videoSourceUrl = useMemo(() => {
-    if (!post) return "";
-
-    if (post.youtube_url && String(post.youtube_url).trim()) {
-      return String(post.youtube_url).trim();
+  useEffect(() => {
+    if (!post || language === "rw") {
+      setTranslatedContent({ title: "", summary: "", paragraphs: [], blocks: [] });
+      return undefined;
     }
 
+    let cancelled = false;
+    const summaryText =
+      post.summary && post.summary !== post.description ? post.summary : "";
+
+    /* Every readable field of a block travels in one batch so the
+       paragraph text, its caption and its alt text all follow the
+       language the reader selected. Non-text slots are sent as empty
+       strings to keep the index mapping stable. */
+    const blockFields = contentBlocks.map((block) => ({
+      text:
+        block && ["paragraph", "heading", "quote"].includes(block.type)
+          ? String(block.text || "")
+          : "",
+      caption: block ? String(block.caption || "") : "",
+      alt: block ? String(block.alt || "") : "",
+    }));
+    const blockPayload = blockFields.flatMap((field) => [
+      field.text,
+      field.caption,
+      field.alt,
+    ]);
+
+    Promise.all([
+      translateMany([post.title || "", summaryText]),
+      translateMany(inlineParagraphs),
+      translateMany(blockPayload),
+    ])
+      .then(([meta, paragraphs, blockValues]) => {
+        if (cancelled) return;
+        setTranslatedContent({
+          title: meta[0] || "",
+          summary: meta[1] || "",
+          paragraphs,
+          blocks: blockFields.map((field, index) => ({
+            text: blockValues[index * 3] || field.text,
+            caption: blockValues[index * 3 + 1] || field.caption,
+            alt: blockValues[index * 3 + 2] || field.alt,
+          })),
+        });
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setTranslatedContent({ title: "", summary: "", paragraphs: [], blocks: [] });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [post, language, translateMany, inlineParagraphs, contentBlocks]);
+
+  const displayTitle = translatedContent.title || post?.title || "";
+  const displaySummary =
+    translatedContent.summary ||
+    (post?.summary && post.summary !== post.description ? post.summary : "");
+
+  const displayParagraphs = useMemo(() => {
+    if (language === "rw") return inlineParagraphs;
+    if (translatedContent.paragraphs.length !== inlineParagraphs.length) {
+      return inlineParagraphs;
+    }
+    return translatedContent.paragraphs;
+  }, [language, inlineParagraphs, translatedContent.paragraphs]);
+
+  const displayBlocks = useMemo(() => {
+    if (language === "rw") return contentBlocks;
+    if (translatedContent.blocks.length !== contentBlocks.length) {
+      return contentBlocks;
+    }
+    return contentBlocks.map((block, index) => {
+      const translated = translatedContent.blocks[index];
+      if (!translated) return block;
+      return {
+        ...block,
+        text: translated.text || block.text,
+        caption: translated.caption || block.caption,
+        alt: translated.alt || block.alt,
+      };
+    });
+  }, [language, contentBlocks, translatedContent.blocks]);
+
+  const youtubeEmbedUrls = useMemo(() => {
+    if (!post) return [];
+
+    const list = Array.isArray(post.youtube_urls) ? post.youtube_urls : [];
+    const fallback = post.youtube_url ? [post.youtube_url] : [];
+
+    return Array.from(
+      new Set(
+        [...list, ...fallback]
+          .map((value) => String(value || "").trim())
+          .filter(Boolean)
+      )
+    ).slice(0, 2);
+  }, [post]);
+
+  const videoSourceUrl = useMemo(() => {
     const videoBlock = contentBlocks.find(
-      (block) => block && block.type === "video" && block.url && String(block.url).trim()
+      (block) =>
+        block &&
+        block.type === "video" &&
+        block.url &&
+        String(block.url).trim() &&
+        !getYouTubeEmbedUrl(block.url)
     );
 
     return videoBlock ? String(videoBlock.url).trim() : "";
-  }, [post, contentBlocks]);
+  }, [contentBlocks]);
 
   const articleBlocks = useMemo(() => {
-    const count = inlineParagraphs.length;
+    const count = displayParagraphs.length;
     const galleryCount = galleryImages.length;
 
     if (galleryCount === 0) {
-      return inlineParagraphs.map((text) => ({ type: "p", text }));
+      return displayParagraphs.map((text) => ({ type: "p", text }));
     }
 
     const blocks = [];
     let inserted = 0;
 
-    inlineParagraphs.forEach((text, index) => {
+    displayParagraphs.forEach((text, index) => {
       blocks.push({ type: "p", text });
 
       const target = Math.floor(((index + 1) * galleryCount) / count);
@@ -542,7 +659,35 @@ export default function PostDetails() {
     }
 
     return blocks;
-  }, [galleryImages, inlineParagraphs]);
+  }, [galleryImages, displayParagraphs]);
+
+  const articlePlainText = useMemo(() => {
+    const parts = [];
+
+    if (displayBlocks.length > 0) {
+      displayBlocks.forEach((block) => {
+        if (!block) return;
+        if (
+          ["paragraph", "heading", "quote"].includes(block.type) &&
+          String(block.text || "").trim()
+        ) {
+          parts.push(String(block.text).trim());
+        }
+      });
+    } else {
+      displayParagraphs.forEach((text) => {
+        if (String(text || "").trim()) parts.push(String(text).trim());
+      });
+    }
+
+    if (parts.length === 0 && String(post?.description || "").trim()) {
+      parts.push(
+        String(post.description).replace(/\s+/g, " ").trim()
+      );
+    }
+
+    return parts.join(" ");
+  }, [displayBlocks, displayParagraphs, post]);
 
 
 
@@ -568,31 +713,12 @@ export default function PostDetails() {
 
       ctx.drawImage(imageObj, 0, 0);
 
-      const fontSize = Math.max(
-        Math.floor(canvas.width * 0.04),
-        24
-      );
-
-      ctx.font = `bold ${fontSize}px sans-serif`;
-      ctx.fillStyle = "rgba(255,255,255,0.75)";
-      ctx.shadowColor = "rgba(0,0,0,0.8)";
-      ctx.shadowBlur = 8;
-      ctx.textAlign = "left";
-      ctx.textBaseline = "bottom";
-
-      const padding = canvas.width * 0.02;
-      ctx.fillText(
-        "© Rubavu Today",
-        padding,
-        canvas.height - padding
-      );
-
       const link = document.createElement("a");
 
       link.download = `${post.title
         ? post.title.replace(/[^a-zA-Z0-9]/g, "_")
         : "rubavu-today"
-        }-watermarked.jpg`;
+        }.jpg`;
 
       link.href = canvas.toDataURL("image/jpeg", 0.9);
 
@@ -698,9 +824,62 @@ export default function PostDetails() {
     );
   };
 
+  const authorPosts = useMemo(() => {
+    if (!post || !Array.isArray(translatedAllPosts) || translatedAllPosts.length === 0) {
+      return [];
+    }
 
+    const currentIsAdmin = isPostByAdmin(post);
+    const currentAuthorKey = currentIsAdmin
+      ? "admin"
+      : getAuthorName(post).trim().toLowerCase();
 
+    const currentId = post.id ?? post._id;
+    const currentSlug = getPostSlug(post);
 
+    return translatedAllPosts
+      .filter((candidate) => {
+        if (!candidate) return false;
+
+        const candidateId = candidate.id ?? candidate._id;
+        const candidateSlug = getPostSlug(candidate);
+
+        const isCurrent =
+          (currentId &&
+            candidateId &&
+            String(candidateId) === String(currentId)) ||
+          (currentSlug && candidateSlug === currentSlug);
+
+        if (isCurrent) return false;
+
+        const key = isPostByAdmin(candidate)
+          ? "admin"
+          : getAuthorName(candidate).trim().toLowerCase();
+
+        return key === currentAuthorKey;
+      })
+      .map((candidate) => {
+        const candidateDate =
+          candidate.createdDate ||
+          candidate.created_at ||
+          candidate.createdAt ||
+          candidate.date;
+
+        return {
+          id: candidate.id ?? candidate._id ?? getPostSlug(candidate),
+          title: candidate.title || "Untitled",
+          url: getArticleUrl(candidate),
+          category: translateCategory(candidate.category, language),
+          dateLabel: formatRelativeTime(candidateDate, language, t),
+          image: candidate.image ? getImageUrl(candidate.image) : null,
+        };
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [translatedAllPosts, post, language, t]);
+
+  useEffect(() => {
+    setProfileOpen(false);
+  }, [post?.id, post?._id, post?.slug]);
 
   const handleCommentSubmit = async (
     e,
@@ -775,7 +954,7 @@ export default function PostDetails() {
 
   const sortedOthers = useMemo(() => {
     const currentId = String(post?._id || post?.id || "");
-    const others = allPosts.filter(
+    const others = translatedAllPosts.filter(
       (p) => String(p._id || p.id || "") !== currentId
     );
 
@@ -789,7 +968,7 @@ export default function PostDetails() {
 
       return timeB - timeA;
     });
-  }, [allPosts, post]);
+  }, [translatedAllPosts, post]);
 
   const relatedPosts = useMemo(() => {
     const currentDepartment = String(post?.amakuru_department || "").trim().toLowerCase();
@@ -849,80 +1028,63 @@ export default function PostDetails() {
     const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     if (motionPreference.matches) return undefined;
 
+    let frameId;
     let paused = false;
-    let advanceTimer;
-    let resumeTimer;
+    let position = rail.scrollLeft;
+    let direction = 1;
 
-    const scheduleAdvance = () => {
-      window.clearTimeout(advanceTimer);
-      if (paused || document.hidden) return;
+    const tick = () => {
+      const maxScroll = rail.scrollWidth - rail.clientWidth;
 
-      advanceTimer = window.setTimeout(() => {
-        const maxScroll = rail.scrollWidth - rail.clientWidth;
-        if (maxScroll > 0) {
-          if (rail.scrollLeft >= maxScroll - 8) {
-            rail.scrollTo({ left: 0, behavior: "smooth" });
-          } else {
-            const card = rail.querySelector("[data-story-card]");
-            const step = card
-              ? card.getBoundingClientRect().width + 12
-              : rail.clientWidth * 0.8;
-            rail.scrollBy({ left: step, behavior: "smooth" });
-          }
+      if (!paused && !document.hidden && maxScroll > 0) {
+        position += 0.5 * direction;
+
+        if (position >= maxScroll) {
+          position = maxScroll;
+          direction = -1;
+        } else if (position <= 0) {
+          position = 0;
+          direction = 1;
         }
-        scheduleAdvance();
-      }, 8000);
+
+        rail.scrollLeft = position;
+      }
+
+      frameId = window.requestAnimationFrame(tick);
     };
 
     const pause = () => {
       paused = true;
-      window.clearTimeout(advanceTimer);
     };
 
     const resume = () => {
       paused = false;
-      scheduleAdvance();
-    };
-
-    const handlePointerDown = () => {
-      pause();
-      window.clearTimeout(resumeTimer);
-    };
-
-    const handlePointerUp = () => {
-      window.clearTimeout(resumeTimer);
-      resumeTimer = window.setTimeout(resume, 4000);
-    };
-
-    const handleFocusOut = (event) => {
-      if (!section.contains(event.relatedTarget)) resume();
+      position = rail.scrollLeft;
     };
 
     const handleVisibilityChange = () => {
-      if (document.hidden) pause();
-      else resume();
+      paused = document.hidden;
     };
 
     section.addEventListener("mouseenter", pause);
     section.addEventListener("mouseleave", resume);
     section.addEventListener("focusin", pause);
-    section.addEventListener("focusout", handleFocusOut);
-    section.addEventListener("pointerdown", handlePointerDown);
-    section.addEventListener("pointerup", handlePointerUp);
-    section.addEventListener("pointercancel", handlePointerUp);
+    section.addEventListener("focusout", resume);
+    section.addEventListener("pointerdown", pause);
+    section.addEventListener("pointerup", resume);
+    section.addEventListener("pointercancel", resume);
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    scheduleAdvance();
+    frameId = window.requestAnimationFrame(tick);
 
     return () => {
-      window.clearTimeout(advanceTimer);
-      window.clearTimeout(resumeTimer);
+      window.cancelAnimationFrame(frameId);
       section.removeEventListener("mouseenter", pause);
       section.removeEventListener("mouseleave", resume);
       section.removeEventListener("focusin", pause);
-      section.removeEventListener("focusout", handleFocusOut);
-      section.removeEventListener("pointerdown", handlePointerDown);
-      section.removeEventListener("pointerup", handlePointerUp);
-      section.removeEventListener("pointercancel", handlePointerUp);
+      section.removeEventListener("focusout", resume);
+      section.removeEventListener("pointerdown", pause);
+      section.removeEventListener("pointerup", resume);
+      section.removeEventListener("pointercancel", resume);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [rightSidePosts.length]);
@@ -1104,7 +1266,7 @@ export default function PostDetails() {
       <div id="printable-article" className="mx-auto w-full max-w-7xl px-3 pb-12 sm:px-6">
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
           <div className="min-w-0 lg:col-span-8">
-            <div className="mx-auto max-w-[760px]">
+            <div id="post-reader-content" className="mx-auto max-w-[760px]">
 
               {/* HEADLINE — the strongest element on the page */}
               {(post.category || post.amakuru_department) && (
@@ -1128,13 +1290,13 @@ export default function PostDetails() {
                 </div>
               )}
               <h1 className="news-headline-featured font-post-title text-xl font-black leading-[1.12] tracking-tight text-slate-950 sm:text-2xl lg:text-3xl">
-                {post.title}
+                {displayTitle}
               </h1>
 
               {/* STANDFIRST */}
-              {post.summary && post.summary !== post.description && (
+              {displaySummary && (
                 <p className="mt-5 border-l-4 border-red-600 pl-4 font-body text-base font-medium leading-relaxed text-slate-600 sm:text-lg">
-                  {post.summary}
+                  {displaySummary}
                 </p>
               )}
 
@@ -1188,7 +1350,7 @@ export default function PostDetails() {
 
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="news-meta font-body uppercase tracking-wider">
+                        <span className="news-meta news-meta--tiny font-body uppercase tracking-wider">
                           {language === "rw" ? "Yanditswe Na:" : t("writtenBy")}
                         </span>
                         <span className="truncate font-body text-sm font-bold text-slate-950">
@@ -1225,6 +1387,13 @@ export default function PostDetails() {
                     author={author}
                     open={profileOpen}
                     onClose={() => setProfileOpen(false)}
+                    posts={authorPosts}
+                    showRole={false}
+                    postsTitle={
+                      language === "rw"
+                        ? "Izindi nkuru z'uyu mwanditsi"
+                        : "More from this author"
+                    }
                   />
                 </div>
 
@@ -1264,7 +1433,7 @@ export default function PostDetails() {
 
                   {/* Twitter/X */}
                   <a
-                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(post.title)}`}
+                    href={`https://twitter.com/intent/tweet?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(displayTitle)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Share on Twitter"
@@ -1277,7 +1446,7 @@ export default function PostDetails() {
 
                   {/* WhatsApp */}
                   <a
-                    href={`https://wa.me/?text=${encodeURIComponent(post.title + " " + window.location.href)}`}
+                    href={`https://wa.me/?text=${encodeURIComponent(displayTitle + " " + window.location.href)}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Share on WhatsApp"
@@ -1290,6 +1459,14 @@ export default function PostDetails() {
                 </div>
               </div>
 
+              {/* READING TOOLS — listen, font size, dark mode, reading time */}
+              <ReadingTools
+                contentId="post-reader-content"
+                text={articlePlainText}
+                title={displayTitle}
+                language={language}
+              />
+
               {/* FEATURED IMAGE */}
               {post.image && (
                 <figure className="mt-7">
@@ -1300,10 +1477,10 @@ export default function PostDetails() {
                   >
                     <OptimizedImage
                       src={getImageUrl(post.image)}
-                      alt={post.title || "Rubavu Today article image"}
+                      alt={displayTitle || "Rubavu Today article image"}
                       widths={RESOLUTION_WIDTHS.HERO}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 900px"
-                      className="block h-auto w-full max-w-full select-none object-contain"
+                      className="article-image select-none"
                       draggable="false"
                       loading="eager"
                       priority
@@ -1315,10 +1492,6 @@ export default function PostDetails() {
                         e.currentTarget.src = rubavuLogo;
                       }}
                     />
-
-                    <div className="absolute bottom-3 left-3 rounded bg-black/75 px-2 py-1 font-body text-[10px] font-semibold text-white">
-                      © Rubavu Today
-                    </div>
                   </div>
 
                   <figcaption className="mt-2 flex items-center justify-between gap-3">
@@ -1345,7 +1518,7 @@ export default function PostDetails() {
               {/* CONTENT */}
               {contentBlocks.length > 0 ? (
                 <ArticleRenderer
-                  blocks={contentBlocks}
+                  blocks={displayBlocks}
                   showHero={false}
                   heroUrl={post?.image}
                   post={post}
@@ -1368,10 +1541,10 @@ export default function PostDetails() {
                           >
                             <OptimizedImage
                               src={getImageUrl(block.url)}
-                              alt={post?.title || "Rubavu Today article photo"}
+                              alt={displayTitle || "Rubavu Today article photo"}
                               widths={RESOLUTION_WIDTHS.GALLERY}
                               sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 720px"
-                              className="block h-auto w-full max-w-full select-none object-contain"
+                              className="article-image select-none"
                               draggable="false"
                               loading="lazy"
                               decoding="async"
@@ -1380,15 +1553,13 @@ export default function PostDetails() {
                                 e.currentTarget.src = rubavuLogo;
                               }}
                             />
-
-                            <div className="absolute bottom-3 left-3 rounded bg-black/75 px-2 py-1 font-body text-[10px] font-semibold text-white">
-                              © Rubavu Today
-                            </div>
                           </div>
 
                           <figcaption className="mt-2 flex items-center justify-between gap-3">
                             <span className="news-meta font-body uppercase tracking-wider">
-                              Photo {block.num} of {galleryImages.length}
+                              {language === "rw"
+                                ? `Ipfoto ${block.num} ya ${galleryImages.length}`
+                                : `Photo ${block.num} of ${galleryImages.length}`}
                             </span>
                             <button
                               type="button"
@@ -1406,19 +1577,11 @@ export default function PostDetails() {
               )}
 
               {/* VIDEO */}
-              {videoSourceUrl ? (
-                <div className="mt-10 print:hidden">
-                  {getYouTubeEmbedUrl(videoSourceUrl) ? (
-                    <div className="relative w-full aspect-video overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 shadow-sm">
-                      <iframe
-                        src={getYouTubeEmbedUrl(videoSourceUrl)}
-                        title={post?.title || "YouTube video"}
-                        className="absolute inset-0 h-full w-full"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                      />
-                    </div>
-                  ) : (
+              {youtubeEmbedUrls.length > 0 || videoSourceUrl ? (
+                <div className="mt-10 space-y-4 print:hidden">
+                  <YouTubeEmbeds urls={youtubeEmbedUrls} title={post?.title || "YouTube video"} />
+
+                  {videoSourceUrl ? (
                     <video
                       controls
                       playsInline
@@ -1427,10 +1590,12 @@ export default function PostDetails() {
                     >
                       <source src={videoSourceUrl} />
                     </video>
-                  )}
-
+                  ) : null}
                 </div>
               ) : null}
+
+              {/* REACTIONS */}
+              <ArticleReactions postId={post?.id || post?.slug} language={language} />
 
               {/* COMMENTS */}
               <section className="mt-12 rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 print:hidden">
@@ -1647,10 +1812,10 @@ export default function PostDetails() {
               {/* SOMA ANDI MAKURU — walks the whole published archive,
                   newest to oldest, one article at a time. */}
               <section className="mt-14">
-                {nextArticle ? (
+                {displayNextArticle ? (
                   <Link
-                    to={getArticleUrl(nextArticle)}
-                    onClick={openPostFull(nextArticle)}
+                    to={getArticleUrl(displayNextArticle)}
+                    onClick={openPostFull(displayNextArticle)}
                     className="group flex flex-col gap-3 rounded-2xl border-2 border-slate-900 bg-white p-5 shadow-sm transition hover:border-red-600 hover:shadow-md sm:flex-row sm:items-center sm:justify-between sm:p-6"
                   >
                     <span className="flex flex-col gap-1">
@@ -1660,7 +1825,7 @@ export default function PostDetails() {
                           : t("readNextArticle")}
                       </span>
                       <span className="line-clamp-2 font-post-title text-lg font-black leading-snug text-slate-950 transition-colors group-hover:text-red-600 sm:text-xl">
-                        {nextArticle.title}
+                        {displayNextArticle.title}
                       </span>
                     </span>
 
@@ -1892,7 +2057,7 @@ export default function PostDetails() {
               ref={moreStoriesRef}
               role="region"
               aria-label={language === "rw" ? "Izindi nkuru" : t("otherStories")}
-              className="flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-3 scrollbar-hide-x"
+              className="flex gap-4 overflow-x-auto pb-3 scrollbar-hide-x"
             >
               {rightSidePosts.map((p) => (
                 <Link

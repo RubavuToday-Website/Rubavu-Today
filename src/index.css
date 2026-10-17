@@ -27,16 +27,52 @@ html[data-theme="dark"] body {
 body {
   margin: 0;
   font-family: var(--font-body);
-  background-color: #f8fafc;
+  background-color: #f5f2ef;
   color: #0f172a;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Compact phone layout: the Tailwind spacing and type scale is rem-based, so
+   trimming the root font size packs more content neatly onto small screens
+   while leaving tablet and desktop untouched. */
+@media (max-width: 640px) {
+  html {
+    font-size: 87.5%;
+  }
+}
+
+@media (max-width: 380px) {
+  html {
+    font-size: 81.25%;
+  }
+}
+
 img {
   display: block;
   max-width: 100%;
+}
+
+.article-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 540px;
+  object-fit: cover;
+  object-position: center;
+}
+
+@media (max-width: 768px) {
+  .article-image {
+    max-height: 380px;
+  }
+}
+
+@media (max-width: 480px) {
+  .article-image {
+    max-height: 300px;
+  }
 }
 
 a {
@@ -445,6 +481,33 @@ a {
   color: var(--text-muted);
   font-size: 0.75rem;
   line-height: 1.4;
+}
+
+.public-site .news-meta--tiny {
+  font-size: 0.625rem;
+}
+
+@keyframes rt-swipe-up {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.65;
+  }
+  50% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
+.rt-swipe-up-icon {
+  animation: rt-swipe-up 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rt-swipe-up-icon {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .public-site .news-category {

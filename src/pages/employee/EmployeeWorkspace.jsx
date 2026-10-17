@@ -33,6 +33,7 @@ import api, {
 import { useAuth } from "../../context/AuthContext";
 import { useNotifications } from "../../context/NotificationsContext";
 import ArticleEditor from "../../components/article/ArticleEditor";
+import YouTubeEmbeds from "../../components/article/YouTubeEmbeds";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import OptimizedImage from "../../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../../utils/images";
@@ -571,13 +572,32 @@ function Employee() {
 
 
 
-  const getYoutubeUrl = (post) => {
-    return (
-      post?.youtube_url ||
-      post?.youtubeUrl ||
-      post?.youtube ||
-      ""
-    );
+  const getYoutubeUrls = (post) => {
+    if (!post) return [];
+
+    const raw = post.youtube_urls ?? post.youtubeUrls;
+    let list = [];
+
+    if (Array.isArray(raw)) {
+      list = raw;
+    } else if (typeof raw === "string" && raw.trim()) {
+      try {
+        const parsed = JSON.parse(raw);
+        list = Array.isArray(parsed) ? parsed : [];
+      } catch {
+        list = [];
+      }
+    }
+
+    const fallback = post.youtube_url || post.youtubeUrl || post.youtube;
+
+    return Array.from(
+      new Set(
+        [...list, ...(fallback ? [fallback] : [])]
+          .map((value) => String(value || "").trim())
+          .filter(Boolean)
+      )
+    ).slice(0, 2);
   };
 
 
@@ -1354,9 +1374,7 @@ function Employee() {
 
 
 
-              {getYoutubeUrl(
-                selectedPost
-              ) && (
+              {getYoutubeUrls(selectedPost).length > 0 && (
 
                   <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 p-4">
 
@@ -1364,18 +1382,25 @@ function Employee() {
                       YouTube Video
                     </p>
 
-                    <a
-                      href={getYoutubeUrl(
-                        selectedPost
-                      )}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 block break-all text-sm font-semibold text-red-600 underline hover:text-red-800"
-                    >
-                      {getYoutubeUrl(
-                        selectedPost
-                      )}
-                    </a>
+                    <YouTubeEmbeds
+                      urls={getYoutubeUrls(selectedPost)}
+                      title={selectedPost.title || "YouTube video"}
+                      className="mt-3"
+                    />
+
+                    <div className="mt-3 space-y-1">
+                      {getYoutubeUrls(selectedPost).map((url, index) => (
+                        <a
+                          key={`yt-link-${index}`}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block break-all text-sm font-semibold text-red-600 underline hover:text-red-800"
+                        >
+                          {url}
+                        </a>
+                      ))}
+                    </div>
 
                   </div>
 

@@ -38,8 +38,8 @@ import {
 
 const STATUS_META = {
   draft: { accent: "slate", icon: FileText, label: "Drafts", valueKey: "draft" },
-  pending: { accent: "amber", icon: Clock, label: "Zitegereje", valueKey: "pending" },
-  approved: { accent: "blue", icon: CheckCircle2, label: "Zemejwe / Zisohowe", valueKey: "approved" },
+  pending: { accent: "amber", icon: Clock, label: "Pending", valueKey: "pending" },
+  approved: { accent: "blue", icon: CheckCircle2, label: "Approved / Zisohowe", valueKey: "approved" },
   rejected: { accent: "red", icon: XCircle, label: "Zanzwe", valueKey: "rejected" },
 };
 
@@ -170,14 +170,14 @@ function Dashboard({ onLogout }) {
               className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-bold text-slate-900 shadow-md transition duration-200 hover:-translate-y-0.5 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-white/80"
             >
               <PenSquare className="h-4 w-4" />
-              Kora Inkuru
+              Work Inkuru
             </Link>
             <Link
               to="/employee/articles"
               className="inline-flex items-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/60"
             >
               <FileText className="h-4 w-4" />
-              Inkuru zanjye
+              My Articles
             </Link>
           </div>
         </div>
@@ -259,7 +259,7 @@ function Dashboard({ onLogout }) {
             hint="Uzikoramo ukira"
           />
           <EmployeeStatCard
-            label="Zitegereje gusuzumwa"
+            label="Pending gusuzumwa"
             value={counts.pending}
             icon={<Clock className="h-5 w-5" />}
             accent="amber"
@@ -300,7 +300,7 @@ function Dashboard({ onLogout }) {
                 to="/employee/create"
                 className="mt-5 inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700"
               >
-                <PenSquare className="h-4 w-4" /> Kora Inkuru
+                <PenSquare className="h-4 w-4" /> Work Inkuru
               </Link>
             </div>
           ) : (
@@ -328,7 +328,7 @@ function Dashboard({ onLogout }) {
           <div className="mb-5 flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900">Amanotisi</h2>
             <Link to="/employee/notifications" className="inline-flex items-center gap-1 text-sm font-semibold text-blue-600 hover:text-blue-700">
-              Zose <ArrowRight className="h-4 w-4" />
+              All <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 

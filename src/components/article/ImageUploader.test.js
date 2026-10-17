@@ -1,9 +1,6 @@
 import {
   MAX_IMAGE_SIZE_BYTES,
   MAX_IMAGES_PER_POST,
-  REQUIRED_IMAGE_WIDTH,
-  REQUIRED_IMAGE_HEIGHT,
-  RESIZE_IMAGE_URL,
   COMPRESS_IMAGE_URL,
   detectImageFormat,
   validateImageFile,
@@ -14,9 +11,6 @@ const bytes = (values) => Uint8Array.from(values);
 test("constants match the publishing requirements", () => {
   expect(MAX_IMAGES_PER_POST).toBe(2);
   expect(MAX_IMAGE_SIZE_BYTES).toBe(120 * 1024);
-  expect(REQUIRED_IMAGE_WIDTH).toBe(1200);
-  expect(REQUIRED_IMAGE_HEIGHT).toBe(630);
-  expect(RESIZE_IMAGE_URL).toBe("https://imresizer.com/resize-image-to-1200x630");
   expect(COMPRESS_IMAGE_URL).toBe("https://imresizer.com/resize-image-to-120kb");
 });
 

@@ -99,15 +99,12 @@ const ImageFigure = ({ block, onImageDownload }) => {
           decoding="async"
           width="1200"
           height="675"
-          className="block h-auto w-full select-none object-contain"
+          className="article-image select-none"
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src = "";
           }}
         />
-        <div className="absolute bottom-3 left-3 rounded bg-black/75 px-2 py-1 font-body text-[10px] font-semibold text-white">
-          © Rubavu Today
-        </div>
       </div>
       {block.caption && (
         <figcaption className="mt-2 text-center font-body text-xs leading-snug text-slate-500">
@@ -328,15 +325,12 @@ const ArticleRenderer = ({
               decoding="async"
               width="1200"
               height="675"
-              className="block h-auto w-full select-none object-contain"
+              className="article-image select-none"
               onError={(e) => {
                 e.currentTarget.onerror = null;
                 e.currentTarget.src = "";
               }}
             />
-            <div className="absolute bottom-3 left-3 rounded bg-black/75 px-2 py-1 font-body text-[10px] font-semibold text-white">
-              © Rubavu Today
-            </div>
           </div>
           {onImageDownload && (
             <div className="mt-2 flex justify-end">

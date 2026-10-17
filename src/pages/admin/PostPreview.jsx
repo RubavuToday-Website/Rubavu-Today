@@ -10,6 +10,7 @@ import {
 } from "../../services/api";
 import { DashboardLayout } from "../../components/dashboard";
 import ArticleRenderer from "../../components/article/ArticleRenderer";
+import YouTubeEmbeds from "../../components/article/YouTubeEmbeds";
 import OptimizedImage from "../../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS, isCloudinaryUrl } from "../../utils/images";
 
@@ -338,7 +339,7 @@ function PostPreview() {
                                         alt={post.title || "Rubavu Today article image"}
                                         widths={RESOLUTION_WIDTHS.HERO}
                                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 900px"
-                                        className="block h-auto w-full max-w-full select-none object-contain"
+                                        className="article-image select-none"
                                         loading="eager"
                                         onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = ""; }}
                                     />
@@ -379,7 +380,7 @@ function PostPreview() {
                                                         alt={post?.title || "Rubavu Today article photo"}
                                                         widths={RESOLUTION_WIDTHS.GALLERY}
                                                         sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 720px"
-                                                        className="block h-auto w-full max-w-full select-none object-contain"
+                                                        className="article-image select-none"
                                                         loading="lazy"
                                                         onError={(e) => { e.currentTarget.onerror = null; e.currentTarget.src = ""; }}
                                                     />
@@ -395,9 +396,10 @@ function PostPreview() {
                         )}
 
                         {/* YouTube URL */}
-                        {post.youtube_url && (
-                            <div className="mt-8">
-                                <a href={post.youtube_url} target="_blank" rel="noopener noreferrer"
+                        {(post.youtube_url || (post.youtube_urls && post.youtube_urls.length > 0)) && (
+                            <div className="mt-8 space-y-4">
+                                <YouTubeEmbeds urls={post.youtube_urls} title={post.title || "YouTube video"} />
+                                <a href={post.youtube_url || post.youtube_urls[0]} target="_blank" rel="noopener noreferrer"
                                     className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2.5 text-xs font-bold uppercase text-white transition hover:bg-red-700">
                                     ▶ Reba kuri YouTube
                                 </a>

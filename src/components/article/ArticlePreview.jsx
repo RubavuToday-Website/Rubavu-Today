@@ -1,6 +1,7 @@
 import React from "react";
 import { Eye, X } from "lucide-react";
 import ArticleRenderer from "./ArticleRenderer";
+import YouTubeEmbeds from "./YouTubeEmbeds";
 
 const ArticlePreview = ({
   open = false,
@@ -12,6 +13,7 @@ const ArticlePreview = ({
   blocks = [],
   author = "",
   dateLabel = "",
+  youtubeUrls = [],
 }) => {
   if (!open) return null;
 
@@ -60,6 +62,12 @@ const ArticlePreview = ({
               hero={hero}
               post={{ title }}
               showHero
+            />
+
+            <YouTubeEmbeds
+              urls={youtubeUrls}
+              title={title || "YouTube video"}
+              className="mt-8"
             />
           </div>
         </div>

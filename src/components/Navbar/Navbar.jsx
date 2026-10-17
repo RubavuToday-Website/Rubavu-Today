@@ -41,6 +41,8 @@ import OptimizedImage from "../common/OptimizedImage";
 import { getArticleUrl } from "../../utils/slug";
 import { formatRelativeTime } from "../../utils/time";
 import { useLanguage, translateCategory } from "../../context/LanguageContext";
+import { useTranslatedPosts } from "../../hooks/useTranslatedPosts";
+import LanguageSelector from "../common/LanguageSelector";
 import { RESOLUTION_WIDTHS, getCloudinaryUrl, isCloudinaryUrl } from "../../utils/images";
 import { getYouTubeEmbedUrl } from "../../utils/video";
 import { getYouTubeThumbnail } from "../../utils/youtube";
@@ -603,23 +605,10 @@ const TimeText = ({ date, className = "" }) => {
 
 const FeaturedStory = ({ posts = [], matchedPostId, postRefs, language }) => {
   const [activeIndex, setActiveIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
 
   useEffect(() => {
     setActiveIndex(0);
   }, [posts.length]);
-
-  useEffect(() => {
-    if (posts.length < 2 || isPaused || prefersReducedMotion()) return undefined;
-
-    const interval = window.setInterval(() => {
-      if (!document.hidden) {
-        setActiveIndex((current) => (current + 1) % posts.length);
-      }
-    }, 8000);
-
-    return () => window.clearInterval(interval);
-  }, [posts.length, isPaused]);
 
   if (!posts.length) return null;
 
@@ -642,14 +631,6 @@ const FeaturedStory = ({ posts = [], matchedPostId, postRefs, language }) => {
         ? "ring-4 ring-yellow-300"
         : "ring-1 ring-slate-200"
         }`}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
-      onFocus={() => setIsPaused(true)}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) {
-          setIsPaused(false);
-        }
-      }}
     >
       <div className="h-1.5 w-full bg-red-600" />
 
@@ -841,7 +822,6 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
 
 
 const LatestWidget = ({ posts = [], postRefs }) => {
-  const { t } = useLanguage();
   const latest = useMemo(
     () => [...posts].sort((a, b) => getTime(b) - getTime(a)).slice(0, 6),
     [posts]
@@ -851,12 +831,6 @@ const LatestWidget = ({ posts = [], postRefs }) => {
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center gap-1.5 border-b-2 border-slate-900 px-3 py-2">
-        <span className="h-3.5 w-1 rounded-sm bg-red-600" />
-        <h3 className="news-section-heading !text-sm leading-tight font-post-title uppercase tracking-tight">
-          {t("latestNews")}
-        </h3>
-      </div>
       <div className="divide-y divide-slate-100">
         {latest.map((post) => {
           const postId = getPostId(post);
@@ -1031,7 +1005,7 @@ const NewsPostsLayout = ({
   advertisements = [],
   activeCategory = "All",
 }) => {
-  const { language, t } = useLanguage();
+  const { language } = useLanguage();
 
   const sortedNewest = useMemo(
     () => [...posts].sort((a, b) => getTime(b) - getTime(a)),
@@ -1124,8 +1098,6 @@ const NewsPostsLayout = ({
         <main className="min-w-0 space-y-2.5 lg:col-span-8">
         {/* FEATURED NEWS */}
         <section>
-          <NewsSectionHeading title={t("featuredNews")} />
-
           <FeaturedStory
             posts={sortedNewest}
             matchedPostId={matchedPostId}
@@ -1438,10 +1410,7 @@ const Navbar = ({ showHomeContent = true }) => {
     setPosts,
   ] = useState([]);
 
-  const [
-    translatedPosts,
-    setTranslatedPosts,
-  ] = useState([]);
+  const translatedPosts = useTranslatedPosts(posts);
 
   const [
     loading,
@@ -1687,22 +1656,6 @@ const Navbar = ({ showHomeContent = true }) => {
       mounted = false;
     };
   }, []);
-
-  /* =====================================================
-     POSTS (single-language: originals shown as-is)
-  ===================================================== */
-
-  useEffect(() => {
-    let mounted = true;
-
-    if (mounted && posts.length > 0) {
-      setTranslatedPosts(posts);
-    }
-
-    return () => {
-      mounted = false;
-    };
-  }, [posts, setTranslatedPosts]);
 
   /* =====================================================
      NAV LINKS
@@ -2155,7 +2108,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
 
-      <div className="relative z-30 border-b border-slate-800 bg-slate-950 font-body text-slate-300">
+      <div className="relative z-50 border-b border-slate-800 bg-slate-950 font-body text-slate-300">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-1 text-[9px] uppercase tracking-[0.1em] sm:px-6 sm:text-[10px]">
           <span className="truncate">
             Rubavu Today — {todayLabel}
@@ -2169,6 +2122,8 @@ const Navbar = ({ showHomeContent = true }) => {
             <span className="hidden font-semibold text-white md:inline">
               {language === "rw" ? "Amakuru yizewe, igihe cyose" : t("trustedNews")}
             </span>
+
+            <LanguageSelector variant="dark" />
           </div>
         </div>
       </div>
@@ -2567,8 +2522,8 @@ const Navbar = ({ showHomeContent = true }) => {
 
       {showHomeContent && (
         <>
-          <main className="home-news-layout relative z-20 mx-auto w-full max-w-7xl px-0 pb-4 pt-5 sm:pb-5">
-            <div className="px-3 pt-4 sm:px-6 sm:pt-5 lg:px-10">
+          <main className="home-news-layout relative z-20 mx-auto w-full max-w-7xl px-0 pb-2 pt-4 sm:pb-3">
+            <div className="px-3 pt-3 sm:px-6 sm:pt-4 lg:px-10">
               {loading ? null : sortedPosts.length ===
                 0 ? (
                 <div className="py-20 text-center font-body text-slate-500">

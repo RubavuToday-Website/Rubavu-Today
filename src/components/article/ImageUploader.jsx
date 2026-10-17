@@ -6,13 +6,7 @@ export const MAX_IMAGE_SIZE_BYTES = 120 * 1024;
 
 export const MAX_IMAGES_PER_POST = 2;
 
-export const REQUIRED_IMAGE_WIDTH = 1200;
-
-export const REQUIRED_IMAGE_HEIGHT = 630;
-
 export const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
-
-export const RESIZE_IMAGE_URL = "https://imresizer.com/resize-image-to-1200x630";
 
 export const COMPRESS_IMAGE_URL = "https://imresizer.com/resize-image-to-120kb";
 
@@ -20,8 +14,6 @@ const ALLOWED_TYPES = ALLOWED_IMAGE_TYPES;
 
 const FORMAT_ERROR =
   "Ubwoko bw'ifoto ntibushyigikiwe. Emerera JPEG, JPG, PNG cyangwa WebP gusa.";
-
-const INVALID_ERROR = "Ifoto ntibyumvikana cyangwa ntiyemewe.";
 
 export const formatFileSize = (bytes) => {
   if (!Number.isFinite(bytes) || bytes < 0) return "";
@@ -66,35 +58,6 @@ export const detectImageFormat = (bytes) => {
   return null;
 };
 
-const readImageDimensions = (file) =>
-  new Promise((resolve) => {
-    if (typeof createImageBitmap === "function") {
-      createImageBitmap(file)
-        .then((bitmap) => {
-          const dimensions = { width: bitmap.width, height: bitmap.height };
-          if (bitmap.close) bitmap.close();
-          resolve(dimensions);
-        })
-        .catch(() => resolve(null));
-      return;
-    }
-
-    const url = URL.createObjectURL(file);
-    const image = new Image();
-
-    image.onload = () => {
-      resolve({ width: image.naturalWidth, height: image.naturalHeight });
-      URL.revokeObjectURL(url);
-    };
-
-    image.onerror = () => {
-      resolve(null);
-      URL.revokeObjectURL(url);
-    };
-
-    image.src = url;
-  });
-
 export const validateImageFile = async (file) => {
   if (!file) return "Nta file wahisemo.";
 
@@ -121,19 +84,6 @@ export const validateImageFile = async (file) => {
     return FORMAT_ERROR;
   }
 
-  const dimensions = await readImageDimensions(file);
-
-  if (!dimensions || !dimensions.width || !dimensions.height) {
-    return INVALID_ERROR;
-  }
-
-  if (
-    dimensions.width !== REQUIRED_IMAGE_WIDTH ||
-    dimensions.height !== REQUIRED_IMAGE_HEIGHT
-  ) {
-    return `Ifoto igomba kuba ${REQUIRED_IMAGE_WIDTH} x ${REQUIRED_IMAGE_HEIGHT} pixels (iyi ni ${dimensions.width} x ${dimensions.height}). Hindura ingano hano: ${RESIZE_IMAGE_URL}`;
-  }
-
   return "";
 };
 
@@ -141,7 +91,7 @@ const ImageUploader = ({
   onAdd,
   multiple = false,
   label = "Shyira amafoto hano",
-  hint = "JPEG, JPG, PNG cyangwa WebP, 1200 x 630 px, max 120 KB",
+  hint = "JPEG, JPG, PNG cyangwa WebP, max 120 KB",
 }) => {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState("");
@@ -210,7 +160,7 @@ const ImageUploader = ({
         <p className="text-xs text-slate-400">
           Kanda kugira uhitemo cyangwa ushye amafoto hano
         </p>
-        <span className="text-[10px] text-slate-400">{hint}</span>
+        {hint && <span className="text-[10px] text-slate-400">{hint}</span>}
       </div>
 
       {error && (

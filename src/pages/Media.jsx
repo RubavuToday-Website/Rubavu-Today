@@ -4,6 +4,7 @@ import { getPosts, API_ROOT } from "../services/api";
 import { getArticleUrl } from "../utils/slug";
 import { SiteSEO } from "../components/SEO/SEO";
 import { useLanguage } from "../context/LanguageContext";
+import { useTranslatedPosts } from "../hooks/useTranslatedPosts";
 import OptimizedImage from "../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS, isCloudinaryUrl } from "../utils/images";
 import { ChevronDown } from "lucide-react";
@@ -84,8 +85,10 @@ const Media = () => {
     };
   }, []);
 
+  const translatedPosts = useTranslatedPosts(posts);
+
   const gallery = useMemo(() => {
-    return posts
+    return translatedPosts
       .filter((post) => post.image || post.images || post.youtube_url || post.content_blocks)
       .map((post) => {
         const images = [];
@@ -117,7 +120,7 @@ const Media = () => {
       })
       .filter((post) => post.images.length > 0 || post.videos.length > 0)
       .sort((a, b) => new Date(b.createdDate || 0) - new Date(a.createdDate || 0));
-  }, [posts]);
+  }, [translatedPosts]);
 
   const filtered = useMemo(() => {
     if (filter === "videos") {

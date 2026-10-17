@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronLeft, ChevronRight, MapPin, Phone } from "lucide-react";
+import { ChevronLeft, ChevronRight, Mail, MapPin, Phone } from "lucide-react";
 import logo from "../../Rubavu.jpeg";
 import { DEPARTMENTS } from "../Navbar/Navbar";
 import { getPosts } from "../../services/api";
@@ -11,6 +11,8 @@ import { getYouTubeThumbnail } from "../../utils/youtube";
 
 const WHATSAPP_URL = "https://wa.me/250788945200";
 const WHATSAPP_DISPLAY = "+250 788 945 200";
+
+const EMAIL_ADDRESS = "rubavutoday@gmail.com";
 
 const DEPT_NAMES_EN = {
   Amakuru: "News",
@@ -238,6 +240,25 @@ const Footer = () => {
                   </span>
                   <span className="font-semibold text-slate-300">{OFFICE_LOCATION}</span>
                 </span>
+              </li>
+
+              <li>
+                <a
+                  href={`mailto:${EMAIL_ADDRESS}`}
+                  className="group flex items-center gap-1.5 text-slate-400 transition hover:text-white"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md border border-slate-700 bg-slate-800 text-red-500 transition group-hover:border-red-600">
+                    <Mail size={11} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-500">
+                      Email
+                    </span>
+                    <span className="font-semibold text-slate-300 group-hover:text-white">
+                      {EMAIL_ADDRESS}
+                    </span>
+                  </span>
+                </a>
               </li>
             </ul>
 

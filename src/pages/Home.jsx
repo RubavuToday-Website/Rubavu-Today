@@ -3,7 +3,8 @@ import { useLocation, Link } from "react-router-dom";
 import { getPosts, getAdvertisements } from "../services/api";
 import { SiteSEO } from "../components/SEO/SEO";
 import { getArticleUrl } from "../utils/slug";
-import { useLanguage } from "../context/LanguageContext";
+import { useLanguage, translateCategory } from "../context/LanguageContext";
+import { useTranslatedPosts } from "../hooks/useTranslatedPosts";
 import AdBanner from "../components/common/AdBanner";
 import AmakuruDepartmentNav from "../components/common/AmakuruDepartmentNav";
 import OptimizedImage from "../components/common/OptimizedImage";
@@ -120,26 +121,29 @@ const Home = () => {
       (a, b) => new Date(b.createdDate || 0) - new Date(a.createdDate || 0)
     );
   }, [filteredPosts]);
-  const featuredStories = sortedPosts.slice(0, 7);
+
+  const displayPosts = useTranslatedPosts(sortedPosts);
+
+  const featuredStories = displayPosts.slice(0, 7);
 
   const mediaPosts = useMemo(() => {
-    return [...sortedPosts]
+    return [...displayPosts]
       .filter((post) => post.image || post.youtube_url)
       .slice(0, 6)
       .map((post) => ({
         ...post,
         articleHref: getArticleUrl(post),
       }));
-  }, [sortedPosts]);
+  }, [displayPosts]);
 
   const sidebarPosts = useMemo(() => {
-    const allRecent = [...sortedPosts].map((post) => ({
+    const allRecent = [...displayPosts].map((post) => ({
       ...post,
       articleHref: getArticleUrl(post),
     }));
 
     return allRecent.slice(0, 6);
-  }, [sortedPosts]);
+  }, [displayPosts]);
 
   const filteredMediaPosts = useMemo(() => {
     const term = mediaSearch.trim().toLowerCase();
@@ -183,7 +187,7 @@ const Home = () => {
     featuredStories.length
       + Math.ceil(Math.max(0, visibleCount - featuredStories.length) / postGridColumns) * postGridColumns
   );
-  const visiblePosts = sortedPosts.slice(0, visiblePostCount);
+  const visiblePosts = displayPosts.slice(0, visiblePostCount);
   const gridPosts = visiblePosts.slice(featuredStories.length);
   const tickerInsertAfter = Math.floor(
     Math.floor(gridPosts.length / 2) / postGridColumns
@@ -216,7 +220,7 @@ const Home = () => {
     const imageUrl = post.image || "https://images.unsplash.com/photo-1495020689067-958852a7765e?auto=format&fit=crop&w=1200&q=80";
     const categoryLabel = isAmakuruCategory(post.category) && post.amakuru_department
       ? post.amakuru_department
-      : post.category;
+      : translateCategory(post.category, language);
 
     return (
       <Link
@@ -276,13 +280,13 @@ const Home = () => {
     const leadStory = featuredStories[0];
     const leadCategory = isAmakuruCategory(leadStory.category) && leadStory.amakuru_department
       ? leadStory.amakuru_department
-      : leadStory.category;
+      : translateCategory(leadStory.category, language);
     const sideStories = featuredStories.slice(5, 7);
 
     return (
       <section
         aria-label={language === "rw" ? "Inkuru z'ingenzi" : "Featured stories"}
-        className="mb-5 overflow-hidden border-y border-slate-200 bg-white py-3 sm:py-4"
+        className="mb-2 overflow-hidden border-y border-slate-200 bg-white py-3 sm:py-4"
       >
         <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-1 pb-2.5 sm:mb-4">
           <div className="flex min-w-0 items-center gap-2.5">
@@ -334,7 +338,7 @@ const Home = () => {
             {featuredStories.slice(1, 5).map((story) => {
               const label = isAmakuruCategory(story.category) && story.amakuru_department
                 ? story.amakuru_department
-                : story.category;
+                : translateCategory(story.category, language);
 
               return (
                 <Link
@@ -377,7 +381,7 @@ const Home = () => {
             {sideStories.map((story) => {
               const label = isAmakuruCategory(story.category) && story.amakuru_department
                 ? story.amakuru_department
-                : story.category;
+                : translateCategory(story.category, language);
 
               return (
                 <Link
@@ -422,12 +426,12 @@ const Home = () => {
 
   const MediaSidebar = () => {
     const sourcePosts = mediaCarouselPosts;
-    const visibleMediaPosts = sourcePosts.length
-      ? Array.from(
-        { length: Math.min(3, sourcePosts.length) },
-        (_, offset) => sourcePosts[(activeMediaSlideIndex + offset) % sourcePosts.length]
-      )
-      : [];
+  const visibleMediaPosts = sourcePosts.length
+    ? Array.from(
+      { length: Math.min(5, sourcePosts.length) },
+      (_, offset) => sourcePosts[(activeMediaSlideIndex + offset) % sourcePosts.length]
+    )
+    : [];
 
     return (
       <aside className="lg:sticky lg:top-24 lg:self-start">
@@ -516,7 +520,7 @@ const Home = () => {
                           <span className="news-category mb-1 block truncate font-body uppercase tracking-wider">
                             {isAmakuruCategory(post.category) && post.amakuru_department
                               ? post.amakuru_department
-                              : post.category}
+                              : translateCategory(post.category, language)}
                           </span>
                         ) : null}
                         <Link
@@ -602,9 +606,9 @@ const Home = () => {
 
               {sortedPosts.length > 0 ? (
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {sortedPosts.map((post) => (
-                    <PostCard key={post.id || post._id} post={post} />
-                  ))}
+                   {displayPosts.map((post) => (
+                     <PostCard key={post.id || post._id} post={post} />
+                   ))}
                 </div>
               ) : (
                 <div className="bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] p-8 max-w-md mx-auto text-center my-12">
@@ -619,7 +623,7 @@ const Home = () => {
             </div>
           ) : sortedPosts.length > 0 ? (
 
-            <div className="space-y-4">
+            <div className="space-y-2">
               {!isSearching && <FeaturedStoriesLayout />}
 
               <SectionHeader
@@ -676,7 +680,7 @@ const Home = () => {
                               className="flex shrink-0 gap-3 pr-3"
                               aria-hidden={copy === 1 ? "true" : undefined}
                             >
-                              {sortedPosts
+                              {displayPosts
                                 .slice(featuredStories.length, featuredStories.length + 8)
                                 .map((story) => (
                                   <Link

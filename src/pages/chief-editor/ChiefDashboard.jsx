@@ -24,9 +24,38 @@ import { API_ROOT as SERVER_URL } from "../../services/api";
 import LoadingScreen from "../../components/common/LoadingScreen";
 import { DashboardLayout, StatusBadge as SharedStatusBadge, DailyTaskCard, WeeklyPerformance } from "../../components/dashboard";
 import ArticleEditor from "../../components/article/ArticleEditor";
+import YouTubeEmbeds from "../../components/article/YouTubeEmbeds";
 import AuthorProfileTrigger from "../../components/common/AuthorProfileTrigger";
 import OptimizedImage from "../../components/common/OptimizedImage";
 import { RESOLUTION_WIDTHS } from "../../utils/images";
+
+const collectYoutubeUrls = (post) => {
+  if (!post) return [];
+
+  const raw = post.youtube_urls ?? post.youtubeUrls;
+  let list = [];
+
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (typeof raw === "string" && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      list = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      list = [];
+    }
+  }
+
+  const fallback = post.youtube_url || post.youtubeUrl;
+
+  return Array.from(
+    new Set(
+      [...list, ...(fallback ? [fallback] : [])]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean)
+    )
+  ).slice(0, 2);
+};
 
 export default function ChiefDashboard({ onLogout }) {
 
@@ -330,6 +359,7 @@ export default function ChiefDashboard({ onLogout }) {
       title: post.title || "",
       description: post.description || post.content || "",
       youtube_url: post.youtube_url || post.youtubeUrl || "",
+      youtube_urls: post.youtube_urls || post.youtubeUrls || null,
       image: post.image || post.image_url || post.imageUrl || null,
       category: post.category || "Amakuru",
       amakuru_department: post.amakuru_department || "",
@@ -856,7 +886,7 @@ export default function ChiefDashboard({ onLogout }) {
     {
       label: "Inkuru",
       items: [
-        { icon: <span className="text-sm">📋</span>, label: "Zose", badge: totalPosts, onClick: () => setStatusFilter("All") },
+        { icon: <span className="text-sm">📋</span>, label: "All", badge: totalPosts, onClick: () => setStatusFilter("All") },
         { icon: <span className="text-sm">⏳</span>, label: "Zitegereje", badge: pendingPosts, onClick: () => setStatusFilter("pending") },
         { icon: <span className="text-sm">✅</span>, label: "Zemejwe", badge: approvedPosts, onClick: () => setStatusFilter("approved") },
         { icon: <span className="text-sm">❌</span>, label: "Zanzwe", badge: rejectedPosts, onClick: () => setStatusFilter("rejected") },
@@ -895,7 +925,7 @@ export default function ChiefDashboard({ onLogout }) {
                 </p>
 
                 <h2 className="text-2xl font-black sm:text-3xl">
-                  Suzuma kandi wemeze inkuru
+                  Review and Approve Articles
                 </h2>
 
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-blue-100">
@@ -951,7 +981,7 @@ export default function ChiefDashboard({ onLogout }) {
                         }
                         className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-white transition duration-200 hover:-translate-y-0.5 hover:bg-white/25 focus:outline-none focus:ring-2 focus:ring-white/60"
                       >
-                        {profilePreview ? "Hindura" : "Ifoto"}
+                        {profilePreview ? "Edit" : "Ifoto"}
                       </button>
 
                       {profilePreview && (
@@ -1022,7 +1052,7 @@ export default function ChiefDashboard({ onLogout }) {
                 <span className="text-xl">✅</span>
                 <span className="rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Gusohora</span>
               </div>
-              <p className="text-sm font-black text-emerald-800">Emeza byatoranijwe</p>
+              <p className="text-sm font-black text-emerald-800">Approve byatoranijwe</p>
               <p className="mt-1 text-xs text-emerald-700">Sohora inkuru zatoranijwe mu kanda kamwe.</p>
             </button>
 
@@ -1248,7 +1278,7 @@ export default function ChiefDashboard({ onLogout }) {
 
               <p className="text-xs font-black uppercase tracking-wide text-blue-600">
                 {editingPostId
-                  ? "Hindura inkuru"
+                  ? "Edit inkuru"
                   : "Kora inkuru"}
               </p>
 
@@ -1412,7 +1442,7 @@ export default function ChiefDashboard({ onLogout }) {
                   disabled={saving}
                   className="rounded-xl bg-emerald-600 px-3 py-2 text-sm font-black text-white hover:bg-emerald-700 disabled:opacity-50"
                 >
-                  ✓ Emeza
+                  ✓ Approve
                 </button>
 
                 <button
@@ -1428,7 +1458,7 @@ export default function ChiefDashboard({ onLogout }) {
                   disabled={saving}
                   className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-black text-red-600 hover:bg-red-600 hover:text-white disabled:opacity-50"
                 >
-                  Siba
+                  Delete
                 </button>
 
                 <button
@@ -1622,7 +1652,7 @@ export default function ChiefDashboard({ onLogout }) {
                           }
                           className="rounded-lg bg-amber-100 px-2 py-2 text-[10px] font-black text-amber-700 hover:bg-amber-500 hover:text-white"
                         >
-                          Hindura
+                          Edit
                         </button>
 
 
@@ -1865,10 +1895,7 @@ export default function ChiefDashboard({ onLogout }) {
 
 
 
-              {(
-                selectedPost.youtube_url ||
-                selectedPost.youtubeUrl
-              ) && (
+              {collectYoutubeUrls(selectedPost).length > 0 && (
 
                   <div className="mt-6 rounded-2xl bg-slate-50 p-4">
 
@@ -1876,18 +1903,25 @@ export default function ChiefDashboard({ onLogout }) {
                       YouTube
                     </p>
 
-                    <a
-                      href={
-                        selectedPost.youtube_url ||
-                        selectedPost.youtubeUrl
-                      }
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 block break-all text-sm font-bold text-blue-600 hover:underline"
-                    >
-                      {selectedPost.youtube_url ||
-                        selectedPost.youtubeUrl}
-                    </a>
+                    <YouTubeEmbeds
+                      urls={collectYoutubeUrls(selectedPost)}
+                      title={selectedPost.title || "YouTube video"}
+                      className="mt-3"
+                    />
+
+                    <div className="mt-3 space-y-1">
+                      {collectYoutubeUrls(selectedPost).map((url, index) => (
+                        <a
+                          key={`yt-link-${index}`}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="block break-all text-xs font-semibold text-blue-600 hover:underline"
+                        >
+                          {url}
+                        </a>
+                      ))}
+                    </div>
 
                   </div>
                 )}

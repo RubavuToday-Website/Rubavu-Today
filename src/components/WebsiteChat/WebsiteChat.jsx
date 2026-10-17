@@ -1,10 +1,59 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { MessageCircle, Send, X } from "lucide-react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { MessageCircle, Send, Volume2, VolumeX, X } from "lucide-react";
 import { API_BASE_URL, getPosts } from "../../services/api";
 import { getArticleUrl } from "../../utils/slug";
+import { useLanguage } from "../../context/LanguageContext";
 import websiteLogo from "../../Rubavu.jpeg";
 
 const MAX_POSTS = 200;
+
+
+
+const VOICE_REPLY_STORAGE_KEY = "voiceReply";
+
+const readStoredFlag = (key) => {
+    try {
+        return window.localStorage.getItem(key) === "1";
+    } catch {
+        return false;
+    }
+};
+
+/* Match a read-aloud voice to the selected language, preferring natural
+   sounding voices when several are installed in the browser. */
+const pickVoice = (voices, language) => {
+    if (!Array.isArray(voices) || !voices.length) return null;
+
+    const prefixes = language === "rw" ? ["rw", "sw", "en"] : [language, "en"];
+
+    const score = (voice) => {
+        const lang = String(voice.lang || "").toLowerCase();
+        const name = String(voice.name || "").toLowerCase();
+        const prefixIndex = prefixes.findIndex((prefix) => lang.startsWith(prefix));
+
+        if (prefixIndex === -1) return -1;
+
+        let value = (prefixes.length - prefixIndex) * 10;
+        if (/natural|neural|premium|enhanced|siri/.test(name)) value += 6;
+        if (/google/.test(name)) value += 4;
+        if (voice.localService) value += 1;
+        if (voice.default) value += 1;
+        return value;
+    };
+
+    return [...voices]
+        .map((voice) => ({ voice, value: score(voice) }))
+        .filter((entry) => entry.value >= 0)
+        .sort((a, b) => b.value - a.value)[0]?.voice || null;
+};
+
+/* Strip bullet/check glyphs so the read-aloud voice stays natural. */
+const speakableText = (value) =>
+    String(value || "")
+        .replace(/[•✓*_#]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
 
 const cleanText = (value) => String(value || "").trim();
 
@@ -293,6 +342,40 @@ export default function WebsiteChat() {
         },
     ]);
     const messagesEndRef = useRef(null);
+    const { language } = useLanguage();
+    const [voiceReply, setVoiceReply] = useState(() => readStoredFlag(VOICE_REPLY_STORAGE_KEY));
+    const spokenRef = useRef(null);
+
+    const speechSupported =
+        typeof window !== "undefined" && "speechSynthesis" in window;
+
+    /* Read the assistant's newest answer out loud when voice replies are on. */
+    const speak = useCallback(
+        (text) => {
+            if (!speechSupported) return;
+
+            const clean = speakableText(text);
+            if (!clean) return;
+
+            const synth = window.speechSynthesis;
+            const voice = pickVoice(synth.getVoices ? synth.getVoices() : [], language);
+
+            synth.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(clean);
+            if (voice) utterance.voice = voice;
+            utterance.rate = 1;
+            utterance.pitch = 1;
+
+            synth.speak(utterance);
+        },
+        [language, speechSupported]
+    );
+
+    const stopSpeaking = useCallback(() => {
+        if (!speechSupported) return;
+        window.speechSynthesis.cancel();
+    }, [speechSupported]);
 
     useEffect(() => {
         let mounted = true;
@@ -313,6 +396,26 @@ export default function WebsiteChat() {
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }, [messages, isOpen]);
+
+    useEffect(() => {
+        if (voiceReply) return;
+        stopSpeaking();
+    }, [voiceReply, stopSpeaking]);
+
+    useEffect(() => {
+        if (!isOpen) stopSpeaking();
+    }, [isOpen, stopSpeaking]);
+
+    useEffect(() => {
+        if (!voiceReply) return;
+
+        const last = messages[messages.length - 1];
+        if (!last || last.role !== "assistant" || last.id === "welcome") return;
+        if (spokenRef.current === last.id) return;
+
+        spokenRef.current = last.id;
+        speak(last.text);
+    }, [messages, voiceReply, speak]);
 
     const quickQuestions = useMemo(
         () => [
@@ -381,6 +484,30 @@ export default function WebsiteChat() {
         }
     };
 
+    /* Let the assistant answer out loud: a saved preference toggles
+       text-to-speech for every new reply. */
+    const toggleVoiceReply = () => {
+        const next = !voiceReply;
+        setVoiceReply(next);
+
+        try {
+            window.localStorage.setItem(VOICE_REPLY_STORAGE_KEY, next ? "1" : "0");
+        } catch {
+            /* ignore storage failures */
+        }
+
+        if (!next) {
+            stopSpeaking();
+            return;
+        }
+
+        const last = messages[messages.length - 1];
+        if (last && last.role === "assistant") {
+            spokenRef.current = last.id;
+            speak(last.text);
+        }
+    };
+
     const openPost = (post) => {
         const url =
             typeof post?.url === "string" && post.url
@@ -407,14 +534,43 @@ export default function WebsiteChat() {
                                 <p className="text-[10px] text-slate-300">Baza amakuru ya Rubavu Today</p>
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            onClick={() => setIsOpen(false)}
-                            aria-label="Funga umufasha"
-                            className="rounded-full p-1.5 text-slate-300 transition hover:bg-slate-800 hover:text-white"
-                        >
-                            <X size={18} aria-hidden="true" />
-                        </button>
+                        <div className="flex items-center gap-1">
+                            {speechSupported && (
+                                <button
+                                    type="button"
+                                    onClick={toggleVoiceReply}
+                                    aria-pressed={voiceReply}
+                                    aria-label={
+                                        voiceReply
+                                            ? "Hagarika amajwi y'igisubizo"
+                                            : "Umva igisubizo mu ijwi"
+                                    }
+                                    title={
+                                        voiceReply
+                                            ? "Hagarika amajwi y'igisubizo"
+                                            : "Umva igisubizo mu ijwi"
+                                    }
+                                    className={`rounded-full p-1.5 transition ${voiceReply
+                                        ? "bg-red-600 text-white hover:bg-red-700"
+                                        : "text-slate-300 hover:bg-slate-800 hover:text-white"
+                                        }`}
+                                >
+                                    {voiceReply ? (
+                                        <Volume2 size={18} aria-hidden="true" />
+                                    ) : (
+                                        <VolumeX size={18} aria-hidden="true" />
+                                    )}
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => setIsOpen(false)}
+                                aria-label="Funga umufasha"
+                                className="rounded-full p-1.5 text-slate-300 transition hover:bg-slate-800 hover:text-white"
+                            >
+                                <X size={18} aria-hidden="true" />
+                            </button>
+                        </div>
                     </header>
 
                     <div className="flex-1 space-y-3 overflow-y-auto bg-white px-3 py-4">

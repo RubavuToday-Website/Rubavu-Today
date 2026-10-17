@@ -7,8 +7,6 @@ import {
   Loader2,
   Plus,
   Trash2,
-  ClipboardPaste,
-  Wand2,
   ImagePlus,
   X,
 } from "lucide-react";
@@ -23,10 +21,36 @@ import {
   AMAKURU_DEPARTMENTS,
   isAmakuruCategory,
 } from "../../utils/amakuruDepartments";
+import { extractYouTubeVideoId, getYouTubeThumbnail } from "../../utils/youtube";
 
 let itemIdCounter = 0;
 const nextId = () => `item-${Date.now()}-${itemIdCounter++}`;
 const nextImgId = () => `img-${Date.now()}-${itemIdCounter++}`;
+
+const parseYoutubeUrls = (initial) => {
+  const raw = initial?.youtube_urls ?? initial?.youtubeUrls;
+  let list = [];
+
+  if (Array.isArray(raw)) {
+    list = raw;
+  } else if (typeof raw === "string" && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw);
+      list = Array.isArray(parsed) ? parsed : [];
+    } catch {
+      list = [];
+    }
+  }
+
+  const fallback = initial?.youtube_url || initial?.youtubeUrl;
+  const combined = [...list, ...(fallback ? [fallback] : [])]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  const unique = Array.from(new Set(combined)).slice(0, 2);
+
+  return [unique[0] || "", unique[1] || ""];
+};
 
 export const ARTICLE_TITLE_MAX_LENGTH = 119;
 
@@ -35,6 +59,11 @@ const TITLE_TOO_LONG_MESSAGE = `Umutwe ntugomba kurenga ${ARTICLE_TITLE_MAX_LENG
 const IMAGE_SIZE_KB = Math.round(MAX_IMAGE_SIZE_BYTES / 1024);
 const MAX_IMAGES_MESSAGE = `Inkuru ishobora kugira amafoto ${MAX_IMAGES_PER_POST} gusa: rimwe munsi y'umutwe, irindi munsi y'ibisobanuro.`;
 const IMAGE_SIZE_MESSAGE = `Buri foto ntiburenze ${IMAGE_SIZE_KB} KB.`;
+
+const INVALID_YOUTUBE_MESSAGE =
+  "Umurongo wa YouTube ntiyemewe. Koresha umurongo wa YouTube nyirizina (urugero: https://www.youtube.com/watch?v=...).";
+
+const MAX_YOUTUBE_LINKS = 2;
 
 const parseInitial = (initial) => {
   let blocks = [];
@@ -112,9 +141,7 @@ const ArticleEditor = ({
   const [amakuruDepartment, setAmakuruDepartment] = useState(
     initial?.amakuru_department || ""
   );
-  const [youtubeUrl, setYoutubeUrl] = useState(
-    initial?.youtube_url || initial?.youtubeUrl || ""
-  );
+  const [youtubeUrls, setYoutubeUrls] = useState(() => parseYoutubeUrls(initial));
   const [sections, setSections] = useState(() => parseInitial(initial));
   const [headerImage, setHeaderImage] = useState(() => {
     const existing = initial?.image || initial?.image_url || initial?.imageUrl || null;
@@ -124,7 +151,6 @@ const ArticleEditor = ({
   const [status, setStatus] = useState(
     (initial?.status && String(initial.status).toLowerCase()) || ""
   );
-  const [pasteText, setPasteText] = useState("");
   const [formError, setFormError] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
 
@@ -166,6 +192,35 @@ const ArticleEditor = ({
       : [{ name: "Amakuru" }];
 
   const isAmakuru = isAmakuruCategory(category);
+
+  const setYoutubeUrlAt = (index, value) => {
+    markDirty();
+    setYoutubeUrls((previous) => {
+      const next = [...previous];
+      next[index] = value;
+      return next;
+    });
+  };
+
+  const addYoutubeUrl = () => {
+    markDirty();
+    setYoutubeUrls((previous) => {
+      if (previous.length >= MAX_YOUTUBE_LINKS) return previous;
+      return [...previous, ""];
+    });
+  };
+
+  const removeYoutubeUrlAt = (index) => {
+    markDirty();
+    setYoutubeUrls((previous) => {
+      const next = previous.filter((_, i) => i !== index);
+      return next.length > 0 ? next : [""];
+    });
+  };
+
+  const hasInvalidYoutubeUrl = youtubeUrls.some(
+    (value) => String(value || "").trim() && !extractYouTubeVideoId(value)
+  );
 
   const paragraphText = sections
     .filter((s) => s.type === "paragraph" && s.text && s.text.trim())
@@ -331,27 +386,6 @@ const ArticleEditor = ({
     setHeaderImage(null);
   };
 
-  const splitPastedTextIntoParagraphs = () => {
-    const raw = String(pasteText || "");
-
-    const paragraphs = raw
-      .split(/\n{2,}/)
-      .map((part) => part.replace(/\s+/g, " ").trim())
-      .filter(Boolean);
-
-    if (paragraphs.length === 0) return;
-
-    markDirty();
-    const newSections = paragraphs.map((text) => ({
-      type: "paragraph",
-      id: nextId(),
-      text,
-    }));
-
-    setSections(newSections);
-    setPasteText("");
-  };
-
   const buildFormData = () => {
     const fd = new FormData();
 
@@ -364,8 +398,14 @@ const ArticleEditor = ({
       fd.append("image", headerImage.file);
     }
 
-    if (youtubeUrl.trim()) {
-      fd.append("youtube_url", youtubeUrl.trim());
+    const cleanYoutubeUrls = youtubeUrls
+      .map((value) => String(value || "").trim())
+      .filter(Boolean);
+
+    fd.append("youtube_url", cleanYoutubeUrls[0] || "");
+
+    if (cleanYoutubeUrls[1]) {
+      fd.append("youtube_url_2", cleanYoutubeUrls[1]);
     }
     if (authorText && authorText.trim()) {
       fd.append("author", authorText.trim());
@@ -448,6 +488,10 @@ const ArticleEditor = ({
       setFormError(headerImage.error);
       return;
     }
+    if (hasInvalidYoutubeUrl) {
+      setFormError(INVALID_YOUTUBE_MESSAGE);
+      return;
+    }
 
     setFormError("");
     dirtyRef.current = false;
@@ -468,6 +512,10 @@ const ArticleEditor = ({
     }
     if (headerImage?.error) {
       setFormError(headerImage.error);
+      return;
+    }
+    if (hasInvalidYoutubeUrl) {
+      setFormError(INVALID_YOUTUBE_MESSAGE);
       return;
     }
 
@@ -591,23 +639,79 @@ const ArticleEditor = ({
             </div>
           )}
 
-          <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-slate-700">
-              Umurongo wa YouTube
-              <span className="ml-1 font-normal normal-case text-slate-400">
-                Ntabwo ari ngombwa
+          <div className="sm:col-span-2">
+            <div className="mb-1.5 flex items-center justify-between">
+              <label className="block text-xs font-bold uppercase tracking-wide text-slate-700">
+                Amarongo ya YouTube
+                <span className="ml-1 font-normal normal-case text-slate-400">
+                  Ntabwo ari ngombwa
+                </span>
+              </label>
+              <span className="shrink-0 text-[10px] font-bold text-slate-400">
+                {youtubeUrls.filter((value) => String(value || "").trim()).length}/{MAX_YOUTUBE_LINKS}
               </span>
-            </label>
-            <input
-              type="url"
-              value={youtubeUrl}
-              onChange={(e) => {
-                setYoutubeUrl(e.target.value);
-                markDirty();
-              }}
-              placeholder="https://www.youtube.com/watch?v=..."
-              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-            />
+            </div>
+
+            <div className="space-y-2">
+              {youtubeUrls.map((value, index) => {
+                const trimmed = String(value || "").trim();
+                const videoId = extractYouTubeVideoId(value);
+                const invalid = Boolean(trimmed) && !videoId;
+                const thumbnail = videoId ? getYouTubeThumbnail(value) : null;
+
+                return (
+                  <div
+                    key={`youtube-${index}`}
+                    className="flex items-start gap-2 rounded-xl border border-slate-200 bg-white p-2"
+                  >
+                    {thumbnail && (
+                      <img
+                        src={thumbnail}
+                        alt="YouTube thumbnail"
+                        className="h-12 w-20 shrink-0 rounded-lg object-cover"
+                      />
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <input
+                        type="url"
+                        value={value}
+                        onChange={(e) => setYoutubeUrlAt(index, e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className={`w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 ${
+                          invalid
+                            ? "border-red-300 focus:border-red-400 focus:ring-red-100"
+                            : "border-slate-300 focus:border-blue-500 focus:ring-blue-100"
+                        }`}
+                      />
+                      {invalid && (
+                        <p className="mt-1 text-[10px] font-semibold text-red-600">
+                          Umurongo wa YouTube ntiyemewe.
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeYoutubeUrlAt(index)}
+                      aria-label="Kuraho umurongo wa YouTube"
+                      className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+
+            {youtubeUrls.length < MAX_YOUTUBE_LINKS && (
+              <button
+                type="button"
+                onClick={addYoutubeUrl}
+                className="mt-2 inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
+              >
+                <Plus className="h-3.5 w-3.5" />
+                Ongeraho umurongo wa kabiri wa YouTube
+              </button>
+            )}
           </div>
         </div>
 
@@ -732,36 +836,6 @@ const ArticleEditor = ({
             </label>
             <span className="text-[10px] font-medium text-slate-400">
               Amafoto {totalImageCount}/{MAX_IMAGES_PER_POST} · {IMAGE_SIZE_MESSAGE}
-            </span>
-          </div>
-
-          <div className="rounded-2xl border border-blue-100 bg-blue-50/40 p-3">
-            <div className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-blue-700">
-              <ClipboardPaste className="h-3.5 w-3.5" />
-              Iyandike byihuse — inkuru yose
-            </div>
-            <p className="mt-1 text-[11px] leading-snug text-slate-500">
-              Shyira inkuru yawe yose hano. Imirongo itandukanije iza nk'ibice, kandi ushobora kongera amafoto hagati yabyo.
-            </p>
-            <textarea
-              rows={4}
-              value={pasteText}
-              onChange={(e) => setPasteText(e.target.value)}
-              placeholder={"Shyira inkuru yawe yose hano...\n\nIgika cya mbere.\n\nIkindi gika cyatandukanijwe n'umurongo utarimo ikintu."}
-              className="mt-2 w-full resize-y rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-7 outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
-            <button
-              type="button"
-              onClick={splitPastedTextIntoParagraphs}
-              disabled={!String(pasteText || "").trim()}
-              className="mt-2 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Wand2 className="h-3.5 w-3.5" />
-              Itandukanya mu bice
-            </button>
-            <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-slate-400">
-              <Plus className="h-3 w-3" />
-              Ibi bihagarika ifishi n'ibice bisukuye. Nyuma ongera amafoto aho ushaka.
             </span>
           </div>
 
@@ -1023,6 +1097,7 @@ const ArticleEditor = ({
         blocks={previewBlocks}
         author={authorText}
         dateLabel={new Date().toLocaleDateString()}
+        youtubeUrls={youtubeUrls}
       />
     </div>
   );
