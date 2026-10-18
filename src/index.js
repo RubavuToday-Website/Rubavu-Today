@@ -15,6 +15,11 @@ root.render(
   <App />
 );
 
+if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
+  navigator.serviceWorker.register(`${process.env.PUBLIC_URL}/sw.js`).catch((error) => {
+    console.error("Rubavu Today service worker registration failed.", error);
+  });
+}
 
 
 

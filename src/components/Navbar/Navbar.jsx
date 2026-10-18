@@ -32,8 +32,6 @@ import {
   Pause,
   Play,
   Radio as RadioIcon,
-  Volume2,
-  VolumeX,
 } from "lucide-react";
 import { useRadio } from "../../context/RadioContext";
 import AdBanner from "../common/AdBanner";
@@ -43,6 +41,7 @@ import { formatRelativeTime } from "../../utils/time";
 import { useLanguage, translateCategory } from "../../context/LanguageContext";
 import { useTranslatedPosts } from "../../hooks/useTranslatedPosts";
 import LanguageSelector from "../common/LanguageSelector";
+import { AppDownloadButton } from "../common/AppDownloadBanner";
 import { RESOLUTION_WIDTHS, getCloudinaryUrl, isCloudinaryUrl } from "../../utils/images";
 import { getYouTubeEmbedUrl } from "../../utils/video";
 import { getYouTubeThumbnail } from "../../utils/youtube";
@@ -1363,12 +1362,8 @@ const Navbar = ({ showHomeContent = true }) => {
     currentItem: radioItem,
     isPlaying: radioIsPlaying,
     isLoading: radioIsLoading,
-    volume: radioVolume,
-    isMuted: radioIsMuted,
     togglePlay: toggleRadio,
     playItem: playRadioItem,
-    setVolume: setRadioVolume,
-    toggleMute: toggleRadioMute,
   } = useRadio();
 
   const radioIsLive = Boolean(radioItem || radioQueue.length);
@@ -1429,6 +1424,8 @@ const Navbar = ({ showHomeContent = true }) => {
 
   const location =
     useLocation();
+
+  const isHomePage = location.pathname === "/";
 
   const params = useMemo(
     () =>
@@ -1992,29 +1989,17 @@ const Navbar = ({ showHomeContent = true }) => {
 
   const radioDropdown = isRadioMenuOpen && (
     <div className="absolute right-0 top-full z-50 mt-1 w-[min(86vw,160px)] rounded-lg border border-slate-700 bg-slate-950 p-2 text-white shadow-xl">
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center">
         <button
           type="button"
           onClick={handleRadioPlay}
           disabled={!radioPlayableItem || radioIsLoading}
-          className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-red-600 text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-md bg-red-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           aria-label={radioIsPlaying ? "Pause radio" : "Play radio"}
         >
           {radioIsLoading ? <Loader2 className="h-3 w-3 animate-spin" /> : radioIsPlaying ? <Pause className="h-3 w-3 fill-current" /> : <Play className="ml-0.5 h-3 w-3 fill-current" />}
+          {radioIsPlaying ? "Pause radio" : "Play radio"}
         </button>
-        <button type="button" onClick={toggleRadioMute} className="text-slate-300 hover:text-white" aria-label={radioIsMuted ? "Unmute radio" : "Mute radio"}>
-          {radioIsMuted || radioVolume === 0 ? <VolumeX className="h-3.5 w-3.5" /> : <Volume2 className="h-3.5 w-3.5" />}
-        </button>
-        <input
-          type="range"
-          min="0"
-          max="1"
-          step="0.05"
-          value={radioIsMuted ? 0 : radioVolume}
-          onChange={(event) => setRadioVolume(event.target.value)}
-          className="radio-range min-w-0 flex-1 accent-red-600"
-          aria-label="Radio volume"
-        />
       </div>
     </div>
   );
@@ -2264,7 +2249,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
           <div className="absolute right-2 flex items-center gap-0 sm:hidden">
-            {radioControl}
+            {!isHomePage && radioControl}
             <button
               type="button"
               onClick={() =>
@@ -2372,7 +2357,8 @@ const Navbar = ({ showHomeContent = true }) => {
                   );
                 }
               )}
-              {radioControl}
+              {!isHomePage && radioControl}
+              <AppDownloadButton className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 font-body text-[10px] font-black uppercase tracking-wide text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400" />
             </div>
           </div>
 
@@ -2427,7 +2413,8 @@ const Navbar = ({ showHomeContent = true }) => {
                   );
                 }
               )}
-              {radioControl}
+              {!isHomePage && radioControl}
+              <AppDownloadButton className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-red-600 px-3 py-1.5 font-body text-[10px] font-black uppercase tracking-wide text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400" />
             </div>
           </div>
 
@@ -2492,7 +2479,10 @@ const Navbar = ({ showHomeContent = true }) => {
                       );
                     }
                   )}
-                  <div className="col-span-2">{radioControl}</div>
+                  {!isHomePage && <div className="col-span-2">{radioControl}</div>}
+                  <div className="col-span-2">
+                    <AppDownloadButton className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-500 bg-red-600 px-3 py-3 text-xs font-black uppercase tracking-wide text-white transition hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-400" />
+                  </div>
                 </div>
               </div>
 

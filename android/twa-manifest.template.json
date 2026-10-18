@@ -1,0 +1,28 @@
+{
+  "packageId": "com.rubavutoday.app",
+  "host": "www.rubavutoday.com",
+  "name": "Rubavu Today",
+  "launcherName": "Rubavu Today",
+  "display": "standalone",
+  "themeColor": "#B3261E",
+  "navigationColor": "#B3261E",
+  "navigationColorDark": "#121212",
+  "navigationDividerColor": "#FFFFFF",
+  "backgroundColor": "#FFFFFF",
+  "enableNotifications": false,
+  "startUrl": "/",
+  "iconUrl": "https://www.rubavutoday.com/favicon-512x512.png",
+  "maskableIconUrl": "https://www.rubavutoday.com/favicon-512x512.png",
+  "splashScreenFadeOutDuration": 300,
+  "signingKey": {
+    "path": "rubavu-today-release.keystore",
+    "alias": "rubavu-today"
+  },
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [],
+  "generatorApp": "bubblewrap-cli",
+  "fallbackType": "customtabs",
+  "features": {},
+  "alphaDependencies": {}
+}

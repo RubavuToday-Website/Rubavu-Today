@@ -5,7 +5,9 @@ import { AuthProvider } from "./context/AuthContext";
 import { LanguageProvider } from "./context/LanguageContext";
 import { ThemeProvider } from "./context/ThemeContext";
 import { RadioProvider } from "./context/RadioContext";
+import { AppInstallProvider } from "./context/AppInstallContext";
 import AppRoutes from "./routes/AppRoutes";
+import AppDownloadDialog from "./components/common/AppDownloadDialog";
 
 function App() {
   return (
@@ -15,7 +17,10 @@ function App() {
           <LanguageProvider>
             <ThemeProvider>
               <RadioProvider>
-                <AppRoutes />
+                <AppInstallProvider>
+                  <AppRoutes />
+                  <AppDownloadDialog />
+                </AppInstallProvider>
               </RadioProvider>
             </ThemeProvider>
           </LanguageProvider>

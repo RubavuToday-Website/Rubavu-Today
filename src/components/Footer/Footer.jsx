@@ -5,7 +5,6 @@ import logo from "../../Rubavu.jpeg";
 import { DEPARTMENTS } from "../Navbar/Navbar";
 import { getPosts } from "../../services/api";
 import OptimizedImage from "../common/OptimizedImage";
-import AppDownloadBanner from "../common/AppDownloadBanner";
 import { RESOLUTION_WIDTHS } from "../../utils/images";
 import { getArticleUrl } from "../../utils/slug";
 import { getYouTubeThumbnail } from "../../utils/youtube";
@@ -137,10 +136,6 @@ const Footer = () => {
 
   return (
     <footer className="bg-slate-950 text-slate-300">
-      {/* APP DOWNLOAD - phones only */}
-      <div className="sm:hidden border-b border-slate-800 px-4 py-3">
-        <AppDownloadBanner />
-      </div>
       <div className="mx-auto max-w-7xl px-5 py-3 sm:px-8 lg:px-16 lg:py-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-12 lg:gap-3">
           {/* BRAND / ABOUT */}
@@ -353,7 +348,6 @@ const Footer = () => {
           <p>
             © 2026 Rubavu Today. <span className="text-slate-400">All rights reserved.</span>
           </p>
-
         </div>
       </div>
     </footer>

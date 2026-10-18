@@ -12,18 +12,18 @@
       "src": "/favicon-512x512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/Rubavu.jpeg",
-      "sizes": "512x512",
-      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "theme_color": "#B3261E",
   "background_color": "#ffffff",
+  "orientation": "portrait",
+  "categories": ["news"],
+  "prefer_related_applications": false,
   "description": "Amakuru mashya mu karere ka Rubavu n'ibindi byose."
 }
