@@ -112,6 +112,8 @@
   "invalidCredentials": "Invalid email or password.",
   "checkingAuth": "Checking authentication...",
   "loginFailed": "Login failed. Please try again.",
+  "appDownloadTitle": "Get the Rubavu Today app",
+  "downloadApk": "Download APK",
   "nav": {
     "home": "Home",
     "news": "News",

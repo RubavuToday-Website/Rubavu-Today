@@ -117,7 +117,7 @@ const Home = () => {
 
   const displayPosts = useTranslatedPosts(sortedPosts);
 
-  const featuredStories = displayPosts.slice(0, 7);
+  const featuredStories = displayPosts.slice(0, 5);
 
   const mediaPosts = useMemo(() => {
     return [...displayPosts]
@@ -270,60 +270,46 @@ const Home = () => {
     const leadCategory = isAmakuruCategory(leadStory.category) && leadStory.amakuru_department
       ? leadStory.amakuru_department
       : translateCategory(leadStory.category, language);
-    const sideStories = featuredStories.slice(5, 7);
 
     return (
       <section
         aria-label={language === "rw" ? "Inkuru z'ingenzi" : "Featured stories"}
-        className="mb-2 overflow-hidden border-y border-slate-200 bg-white py-3 sm:py-4"
+        className="mb-6 overflow-hidden bg-white"
       >
-        <div className="mb-3 flex items-center gap-2 border-b border-slate-200 px-1 pb-2.5 sm:mb-4">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <span className="h-5 w-1 shrink-0 rounded-full bg-[#B3261E]" />
-            <div className="min-w-0">
-              <p className="font-body text-[9px] font-bold uppercase tracking-[0.18em] text-[#B3261E]">
-                {language === "rw" ? "Amakuru yatoranyijwe" : "Top stories"}
-              </p>
-              <h2 className="font-masthead text-sm font-extrabold leading-tight text-slate-900 sm:text-base">
-                {language === "rw" ? "Inkuru z'ingenzi" : "Featured stories"}
-              </h2>
-            </div>
-          </div>
-        </div>
-
-        <div className="grid min-w-0 grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-[1.2fr_1fr_0.9fr] lg:gap-4">
+        <div className="grid min-w-0 grid-cols-1 gap-5 lg:grid-cols-[1.45fr_1fr] lg:gap-5">
           <Link
             to={getArticleUrl(leadStory)}
-            className="group relative block min-h-[280px] overflow-hidden bg-slate-900 sm:min-h-[380px] lg:min-h-[430px]"
+            className="group block min-w-0 overflow-hidden border-t-4 border-[#B3261E] bg-white"
           >
-            <OptimizedImage
-              src={leadStory.image || "/Rubavu.jpeg"}
-              alt={leadStory.title || ""}
-              widths={RESOLUTION_WIDTHS.HERO}
-              sizes="(max-width: 1024px) 100vw, 42vw"
-              loading="lazy"
-              decoding="async"
-              className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/45 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-4 text-white sm:p-7 lg:p-8">
+            <div className="aspect-[16/10] overflow-hidden bg-slate-100 lg:aspect-[16/9]">
+              <OptimizedImage
+                src={leadStory.image || "/Rubavu.jpeg"}
+                alt={leadStory.title || ""}
+                widths={RESOLUTION_WIDTHS.HERO}
+                sizes="(max-width: 1024px) 100vw, 58vw"
+                loading="lazy"
+                decoding="async"
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              />
+            </div>
+            <div className="pt-3">
               {leadCategory && (
-                <span className="mb-2 inline-flex max-w-full truncate rounded-sm bg-[#B3261E] px-2 py-1 font-body text-[9px] font-bold uppercase tracking-[0.13em] text-white sm:text-[10px]">
+                <span className="mb-1 block font-body text-[9px] font-bold uppercase tracking-[0.14em] text-[#B3261E]">
                   {leadCategory}
                 </span>
               )}
-              <h3 className="max-w-3xl font-masthead text-xl font-extrabold leading-tight tracking-tight text-white transition-colors group-hover:text-red-100 sm:text-3xl lg:text-4xl">
+              <h3 className="max-w-3xl font-masthead text-lg font-extrabold leading-snug tracking-tight text-slate-900 transition-colors group-hover:text-[#B3261E] sm:text-xl">
                 {leadStory.title}
               </h3>
               {leadStory.createdDate && (
-                <time className="mt-3 block font-body text-[10px] font-medium text-slate-200 sm:text-xs">
+                <time className="mt-2 block font-body text-[10px] font-medium uppercase tracking-wide text-slate-500">
                   {formatDate(leadStory.createdDate, language)}
                 </time>
               )}
             </div>
           </Link>
 
-          <div className="flex flex-col divide-y divide-slate-200 border-y border-slate-200 md:col-span-2 lg:col-span-1 lg:h-full lg:border-y-0">
+          <div className="grid min-w-0 grid-cols-2 gap-x-3 gap-y-4">
             {featuredStories.slice(1, 5).map((story) => {
               const label = isAmakuruCategory(story.category) && story.amakuru_department
                 ? story.amakuru_department
@@ -333,26 +319,26 @@ const Home = () => {
                 <Link
                   key={story.id || story._id || story.title}
                   to={getArticleUrl(story)}
-                  className="group flex min-h-[86px] flex-1 items-center gap-3 py-2.5 sm:min-h-[94px]"
+                  className="group min-w-0"
                 >
-                  <span className="h-[66px] w-[82px] shrink-0 overflow-hidden bg-slate-100 sm:h-[76px] sm:w-[100px]">
+                  <span className="mb-2 block aspect-[16/10] overflow-hidden bg-slate-100">
                     <OptimizedImage
                       src={story.image || "/Rubavu.jpeg"}
                       alt=""
-                      widths={RESOLUTION_WIDTHS.THUMB}
-                      sizes="100px"
+                      widths={RESOLUTION_WIDTHS.CARD}
+                      sizes="(max-width: 1024px) 50vw, 20vw"
                       loading="lazy"
                       decoding="async"
                       className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                     />
                   </span>
-                  <span className="min-w-0">
+                  <span className="block min-w-0">
                     {label && (
                       <span className="mb-1 block truncate font-body text-[8px] font-bold uppercase tracking-[0.12em] text-[#B3261E]">
                         {label}
                       </span>
                     )}
-                    <span className="line-clamp-3 block font-masthead text-xs font-bold leading-snug text-slate-900 transition-colors group-hover:text-[#B3261E] sm:text-sm">
+                    <span className="line-clamp-3 block font-masthead text-xs font-bold leading-snug text-slate-900 transition-colors group-hover:text-[#B3261E] sm:text-[13px]">
                       {story.title}
                     </span>
                     {story.createdDate && (
@@ -361,49 +347,6 @@ const Home = () => {
                       </time>
                     )}
                   </span>
-                </Link>
-              );
-            })}
-          </div>
-
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:col-span-2 lg:col-span-1 lg:grid-cols-1">
-            {sideStories.map((story) => {
-              const label = isAmakuruCategory(story.category) && story.amakuru_department
-                ? story.amakuru_department
-                : translateCategory(story.category, language);
-
-              return (
-                <Link
-                  key={story.id || story._id || story.title}
-                  to={getArticleUrl(story)}
-                  className="group overflow-hidden border border-slate-200 bg-white transition-shadow hover:shadow-md"
-                >
-                  <div className="aspect-[16/9] overflow-hidden bg-slate-100">
-                    <OptimizedImage
-                      src={story.image || "/Rubavu.jpeg"}
-                      alt={story.title || ""}
-                      widths={RESOLUTION_WIDTHS.CARD}
-                      sizes="(max-width: 1024px) 50vw, 28vw"
-                      loading="lazy"
-                      decoding="async"
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                  </div>
-                  <div className="p-2.5">
-                    {label && (
-                      <span className="mb-1 block truncate font-body text-[8px] font-bold uppercase tracking-[0.12em] text-[#B3261E]">
-                        {label}
-                      </span>
-                    )}
-                    <h3 className="line-clamp-3 font-masthead text-sm font-bold leading-snug text-slate-900 transition-colors group-hover:text-[#B3261E]">
-                      {story.title}
-                    </h3>
-                    {story.createdDate && (
-                      <time className="mt-1.5 block font-body text-[9px] text-slate-500">
-                        {formatDate(story.createdDate, language)}
-                      </time>
-                    )}
-                  </div>
                 </Link>
               );
             })}
@@ -599,7 +542,7 @@ const Home = () => {
           : "/"}
       />
       <main className="flex-grow">
-        <section className="max-w-7xl mx-auto px-3 xs:px-4 sm:px-6 pt-1.5 pb-1.5">
+        <section className="max-w-7xl mx-auto px-4 xs:px-6 sm:px-8 pt-6 pb-1.5 sm:pt-8">
           {isAmakuruPage && <AmakuruDepartmentNav />}
           {loading ? null : error ? (
             /* Error State */

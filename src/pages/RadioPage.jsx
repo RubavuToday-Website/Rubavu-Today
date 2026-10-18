@@ -94,7 +94,7 @@ function RadioPage() {
         canonicalPath="/radio"
         image="/Rubavu-Today-Radio.png"
       />
-      <section className="mx-auto w-full max-w-6xl px-4 py-6 sm:px-6 sm:py-8">
+      <section className="mx-auto w-full max-w-6xl px-5 py-6 sm:px-8 sm:py-8">
         <header className="mb-6 flex flex-col items-center gap-3 border-b border-slate-200 pb-5 text-center">
           <div className="flex w-full min-w-0 flex-col items-center gap-2">
             <img

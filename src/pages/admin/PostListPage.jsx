@@ -200,13 +200,13 @@ function PostListPage() {
                                         </div>
                                     </div>
 
-                                    <div className="p-4">
+                                    <div className="p-3">
                                         {post.category && (
-                                            <span className="text-[11px] font-bold text-brand-600">{post.category}</span>
+                                            <span className="text-[10px] font-bold uppercase tracking-wide text-red-600">{post.category}</span>
                                         )}
-                                        <h3 className="mt-1 line-clamp-2 font-bold text-slate-900">{post.title || "Untitled"}</h3>
-                                        <p className="mt-1 line-clamp-2 text-xs text-slate-500">{post.description || ""}</p>
-                                        <div className="mt-3 space-y-1 text-[11px] text-slate-400">
+                                        <h3 className="mt-1 line-clamp-2 text-[13px] font-bold leading-[1.35] text-slate-900 sm:text-sm">{post.title || "Untitled"}</h3>
+                                        <p className="mt-1 line-clamp-2 text-[11px] leading-4 text-slate-500 sm:text-xs">{post.description || ""}</p>
+                                        <div className="mt-2 space-y-1 text-[10px] leading-4 text-slate-400">
                                             {post.author?.name || post.author ? (
                                                 <p>N'umwanditsi: <span className="font-semibold text-slate-600">{post.author?.name || post.author}</span></p>
                                             ) : null}
@@ -217,45 +217,45 @@ function PostListPage() {
                                         </div>
 
                                         {/* Actions */}
-                                        <div className="mt-4 flex flex-wrap gap-2">
+                                        <div className="mt-3 flex flex-wrap gap-1.5">
                                             <button
                                                 onClick={() => navigate(`/admin/posts/${post.id}/view`)}
                                                 title="Reba inkuru"
-                                                className="rounded-lg bg-blue-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-700"
+                                                className="rounded-md bg-blue-600 px-2 py-1 text-[10px] font-semibold text-white transition hover:bg-blue-700"
                                             >
                                                 👁 Reba
                                             </button>
                                             <button
                                                 onClick={() => navigate(`/admin/posts/${post.id}/edit`)}
                                                 title="Hindura inkuru"
-                                                className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                                                className="rounded-md border border-slate-200 px-2 py-1 text-[10px] font-semibold text-slate-600 transition hover:bg-slate-50"
                                             >
                                                 ✎ Hindura
                                             </button>
                                             {config.status !== "approved" && (
                                                 <button onClick={() => handleApprove(post)}
                                                     title="Emeza inkuru"
-                                                    className="rounded-lg bg-emerald-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-700">
+                                                    className="rounded-md bg-emerald-600 px-2 py-1 text-[10px] font-semibold text-white transition hover:bg-emerald-700">
                                                     ✓ Emeza
                                                 </button>
                                             )}
                                             {config.status !== "rejected" && (
                                                 <button onClick={() => handleReject(post)}
                                                     title="Anga inkuru"
-                                                    className="rounded-lg bg-red-600 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-red-700">
+                                                    className="rounded-md bg-red-600 px-2 py-1 text-[10px] font-semibold text-white transition hover:bg-red-700">
                                                     ✕ Zana
                                                 </button>
                                             )}
                                             {config.status !== "pending" && (
                                                 <button onClick={() => handlePending(post)}
                                                     title="Subiza pending"
-                                                    className="rounded-lg bg-amber-500 px-2.5 py-1.5 text-xs font-semibold text-white transition hover:bg-amber-600">
-                                                    ↩ Subiza pending
+                                                    className="rounded-md bg-amber-500 px-2 py-1 text-[10px] font-semibold text-white transition hover:bg-amber-600">
+                                                    ↩ Pending
                                                 </button>
                                             )}
                                             <button onClick={() => handleDelete(post)}
                                                 title="Siba inkuru"
-                                                className="rounded-lg border border-red-200 px-2.5 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-50">
+                                                className="rounded-md border border-red-200 px-2 py-1 text-[10px] font-semibold text-red-600 transition hover:bg-red-50">
                                                 🗑 Siba
                                             </button>
                                         </div>

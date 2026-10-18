@@ -1092,7 +1092,7 @@ export default function PostDetails() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50">
-        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
+        <div className="mx-auto max-w-5xl px-5 py-8 sm:px-8">
           <div className="animate-pulse space-y-6">
             <div className="h-8 w-3/4 rounded-xl bg-slate-200" />
             <div className="h-5 w-2/3 rounded-lg bg-slate-200" />
@@ -1263,7 +1263,7 @@ export default function PostDetails() {
     <div className="post-detail-page min-h-screen bg-slate-50 text-slate-900">
       <ArticleSEO post={post} />
 
-      <div id="printable-article" className="mx-auto w-full max-w-7xl px-3 pb-12 sm:px-6">
+      <div id="printable-article" className="mx-auto w-full max-w-7xl px-4 pb-12 sm:px-8">
         <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-12">
           <div className="min-w-0 lg:col-span-8">
             <div id="post-reader-content" className="mx-auto max-w-[760px]">

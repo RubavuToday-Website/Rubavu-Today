@@ -5,6 +5,7 @@ import logo from "../../Rubavu.jpeg";
 import { DEPARTMENTS } from "../Navbar/Navbar";
 import { getPosts } from "../../services/api";
 import OptimizedImage from "../common/OptimizedImage";
+import AppDownloadBanner from "../common/AppDownloadBanner";
 import { RESOLUTION_WIDTHS } from "../../utils/images";
 import { getArticleUrl } from "../../utils/slug";
 import { getYouTubeThumbnail } from "../../utils/youtube";
@@ -136,7 +137,11 @@ const Footer = () => {
 
   return (
     <footer className="bg-slate-950 text-slate-300">
-      <div className="mx-auto max-w-7xl px-4 py-3 sm:px-6 lg:px-10 lg:py-4">
+      {/* APP DOWNLOAD - phones only */}
+      <div className="sm:hidden border-b border-slate-800 px-4 py-3">
+        <AppDownloadBanner />
+      </div>
+      <div className="mx-auto max-w-7xl px-5 py-3 sm:px-8 lg:px-16 lg:py-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-12 lg:gap-3">
           {/* BRAND / ABOUT */}
           <div className="md:col-span-2 lg:col-span-3">
@@ -344,7 +349,7 @@ const Footer = () => {
 
       {/* BOTTOM BAR */}
       <div className="border-t border-slate-800">
-        <div className="mx-auto flex max-w-7xl flex-col gap-1.5 px-4 py-2 text-[9px] text-slate-500 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-1.5 px-5 py-2 text-[9px] text-slate-500 sm:px-8 md:flex-row md:items-center md:justify-between lg:px-16">
           <p>
             © 2026 Rubavu Today. <span className="text-slate-400">All rights reserved.</span>
           </p>

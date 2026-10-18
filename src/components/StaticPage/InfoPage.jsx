@@ -5,7 +5,7 @@ import { ChevronRight } from "lucide-react";
 
 const InfoPageHeader = ({ title, lede }) => (
   <header className="border-b border-slate-200 bg-white">
-    <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-10">
+    <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10 lg:px-16">
       <nav
         aria-label="Breadcrumb"
         className="mb-3 flex items-center gap-1 text-[12px] font-medium text-slate-500"
@@ -83,7 +83,7 @@ const InfoPage = ({ title, lede, description, children }) => {
 
       <InfoPageHeader title={title} lede={lede} />
 
-      <div className="mx-auto mt-6 max-w-7xl space-y-5 px-4 sm:px-6 lg:px-10">
+      <div className="mx-auto mt-6 max-w-7xl space-y-5 px-5 sm:px-8 lg:px-16">
         {children}
       </div>
     </div>

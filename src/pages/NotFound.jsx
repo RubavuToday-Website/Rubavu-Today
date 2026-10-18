@@ -7,7 +7,7 @@ import { useLanguage } from "../context/LanguageContext";
 function NotFound() {
   const { t } = useLanguage();
   return (
-    <div className="min-h-[80vh] bg-slate-50 flex flex-col justify-center items-center px-4 sm:px-6 py-12 text-center font-serif">
+    <div className="min-h-[80vh] bg-slate-50 flex flex-col justify-center items-center px-5 sm:px-8 py-12 text-center font-serif">
       <NotFoundSEO />
       <div className="mb-6">
         <img 

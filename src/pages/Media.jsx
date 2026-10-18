@@ -158,7 +158,7 @@ const Media = () => {
       <SiteSEO />
 
       <main className="flex-grow">
-        <section className="mx-auto max-w-7xl px-3 xs:px-4 sm:px-6 pt-4 pb-8">
+        <section className="mx-auto max-w-7xl px-4 xs:px-6 sm:px-8 pt-4 pb-8">
           <div className="flex flex-col gap-3 border-b-2 border-black pb-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="font-masthead text-2xl font-black uppercase tracking-tight text-slate-900">

@@ -1145,7 +1145,7 @@ const NewsPostsLayout = ({
       </div>
 
       {videoPosts.length > 0 && (
-        <section className="overflow-hidden bg-[#20252B] px-4 py-7 text-white shadow-sm sm:px-6 sm:py-9 lg:px-8">
+        <section className="overflow-hidden bg-[#20252B] px-5 py-7 text-white shadow-sm sm:px-8 sm:py-9 lg:px-16">
           <div className="mx-auto max-w-7xl">
             <div className="mb-5 flex items-end justify-between gap-4 sm:mb-6">
               <div>
@@ -1271,7 +1271,7 @@ const NewsPostsLayout = ({
       )}
 
       {archiveStories.length > 0 && (
-        <section className="overflow-hidden bg-[#20252B] px-4 py-7 text-white shadow-sm sm:px-6 sm:py-9 lg:px-8">
+        <section className="overflow-hidden bg-[#20252B] px-5 py-7 text-white shadow-sm sm:px-8 sm:py-9 lg:px-16">
           <div className="mx-auto max-w-7xl">
             <div className="mb-5 flex items-end justify-between gap-4 border-b border-white/15 pb-3 sm:mb-6">
               <div>
@@ -2106,7 +2106,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
       <div className="relative z-50 border-b border-slate-800 bg-slate-950 font-body text-slate-300">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-3 py-1 text-[9px] uppercase tracking-[0.1em] sm:px-6 sm:text-[10px]">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-1 text-[9px] uppercase tracking-[0.1em] sm:px-8 sm:text-[10px]">
           <span className="truncate">
             Rubavu Today — {todayLabel}
           </span>
@@ -2186,7 +2186,7 @@ const Navbar = ({ showHomeContent = true }) => {
 
 
       <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950 text-white shadow-xl">
-        <div className="relative mx-auto flex h-[56px] max-w-7xl items-center justify-center px-2 sm:h-[68px] sm:px-6 lg:h-[72px] lg:px-10">
+        <div className="relative mx-auto flex h-[56px] max-w-7xl items-center justify-center px-3 sm:h-[68px] sm:px-8 lg:h-[72px] lg:px-16">
 
 
 
@@ -2520,7 +2520,7 @@ const Navbar = ({ showHomeContent = true }) => {
       {showHomeContent && (
         <>
           <main className="home-news-layout relative z-20 mx-auto w-full max-w-7xl px-0 pb-2 pt-4 sm:pb-3">
-            <div className="px-3 pt-3 sm:px-6 sm:pt-4 lg:px-10">
+            <div className="px-4 pt-3 sm:px-8 sm:pt-4 lg:px-16">
               {loading ? null : sortedPosts.length ===
                 0 ? (
                 <div className="py-20 text-center font-body text-slate-500">

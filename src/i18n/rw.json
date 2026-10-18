@@ -112,6 +112,8 @@
   "invalidCredentials": "Imeyili cyangwa ijambobanga ntabwo ari byo.",
   "checkingAuth": "Birimo kugenzura umwirondoro...",
   "loginFailed": "Kwinjira ntabwo byakunze. Ongera ugerageze.",
+  "appDownloadTitle": "Pakura porozaramu ya Rubavu Today",
+  "downloadApk": "Pakura APK",
   "nav": {
     "home": "Ahabanza",
     "news": "Amakuru",
