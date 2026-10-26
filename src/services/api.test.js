@@ -1,4 +1,4 @@
-import { addPost, deletePost, getPosts, updatePost, uploadProfileImage } from './api';
+import { API_BASE_URL, addPost, deletePost, getPosts, updatePost, uploadProfileImage } from './api';
 
 describe('api service', () => {
   beforeEach(() => {
@@ -19,6 +19,7 @@ describe('api service', () => {
         image: 'https://example.com/image.jpg',
         summary: 'Demo content',
         content: 'Demo content',
+        status: 'approved',
       },
     ];
 
@@ -29,11 +30,11 @@ describe('api service', () => {
 
     const result = await getPosts();
 
-    expect(global.fetch).toHaveBeenCalledWith('http://localhost:5000/api/posts');
-    expect(result).toEqual(expected);
+    expect(global.fetch).toHaveBeenCalledWith(`${API_BASE_URL}/posts`);
+    expect(result).toMatchObject(expected);
   });
 
-  it('uploads a post and converts an uploaded file into a data URL', async () => {
+  it('uploads a post with its fields and image as multipart form data', async () => {
     const formData = new FormData();
     formData.append('title', 'New post');
     formData.append('description', 'Uploaded from admin dashboard');
@@ -56,20 +57,18 @@ describe('api service', () => {
     const result = await addPost(formData);
 
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://localhost:5000/api/posts',
+      `${API_BASE_URL}/posts`,
       expect.objectContaining({
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
       })
     );
 
-    const requestBody = JSON.parse(global.fetch.mock.calls[0][1].body);
-    expect(requestBody).toMatchObject({
-      title: 'New post',
-      description: 'Uploaded from admin dashboard',
-      category: 'Amakuru',
-    });
-    expect(requestBody.image).toContain('data:image/png;base64,');
+    const requestBody = global.fetch.mock.calls[0][1].body;
+    expect(requestBody).toBeInstanceOf(FormData);
+    expect(requestBody.get('title')).toBe('New post');
+    expect(requestBody.get('description')).toBe('Uploaded from admin dashboard');
+    expect(requestBody.get('category')).toBe('Amakuru');
+    expect(requestBody.get('image')).toBeInstanceOf(File);
     expect(result).toEqual(expected);
   });
 
@@ -91,7 +90,7 @@ describe('api service', () => {
     const deleted = await deletePost(7);
 
     expect(updated.title).toBe('Updated post');
-    expect(deleted).toBe(true);
+    expect(deleted).toEqual({ success: true });
   });
 
   it('stores profile image URLs from the canonical auth payload', async () => {

@@ -91,6 +91,7 @@ const FooterLink = ({ to, children }) => (
 
 const Footer = () => {
   const [mediaPosts, setMediaPosts] = useState([]);
+  const [latestPosts, setLatestPosts] = useState([]);
   const [mediaLoadError, setMediaLoadError] = useState("");
   const mediaStripRef = useRef(null);
 
@@ -100,9 +101,13 @@ const Footer = () => {
     getPosts()
       .then((posts) => {
         if (!mounted) return;
-        const recentMedia = (Array.isArray(posts) ? posts : [])
-          .filter((post) => post.image || post.youtube_url)
+        const sortedPosts = (Array.isArray(posts) ? posts : [])
+          .slice()
           .sort((a, b) => new Date(b.createdDate || 0) - new Date(a.createdDate || 0));
+        setLatestPosts(sortedPosts.slice(0, 10));
+
+        const recentMedia = sortedPosts
+          .filter((post) => post.image || post.youtube_url);
         setMediaPosts(recentMedia);
       })
       .catch((error) => {
@@ -136,6 +141,56 @@ const Footer = () => {
 
   return (
     <footer className="bg-slate-950 text-slate-300">
+      {latestPosts.length > 0 && (
+        <section
+          aria-label="Amakuru mashya"
+          className="overflow-hidden border-b border-slate-800 bg-slate-900/80"
+        >
+          <div className="mx-auto flex max-w-7xl items-center gap-3 px-5 py-3 sm:px-8 lg:px-16">
+            <div className="flex shrink-0 items-center gap-2">
+              <span aria-hidden="true" className="h-2 w-2 rounded-full bg-red-500" />
+              <h2 className="font-post-title text-[10px] font-black uppercase tracking-wider text-white">
+                Amakuru mashya
+              </h2>
+            </div>
+            <div className="latest-stories-marquee min-w-0 flex-1">
+              <div className="latest-stories-marquee__track">
+                {[false, true].map((isDuplicate) => (
+                  <div
+                    key={isDuplicate ? "duplicate" : "stories"}
+                    className="latest-stories-marquee__group"
+                    aria-hidden={isDuplicate || undefined}
+                  >
+                    {latestPosts.map((post, index) => (
+                      <Link
+                        key={`${post.id || post._id || post.title}-${index}`}
+                        to={getArticleUrl(post)}
+                        tabIndex={isDuplicate ? -1 : undefined}
+                        className="group flex w-56 shrink-0 items-center gap-2 border-r border-slate-700 pr-4 sm:w-64"
+                      >
+                        {(post.image || post.youtube_url) && (
+                          <OptimizedImage
+                            src={post.image || getYouTubeThumbnail(post.youtube_url)}
+                            alt=""
+                            widths={RESOLUTION_WIDTHS.THUMB}
+                            sizes="48px"
+                            loading="lazy"
+                            decoding="async"
+                            className="h-10 w-12 shrink-0 rounded-sm object-cover"
+                          />
+                        )}
+                        <span className="line-clamp-2 text-[10px] font-semibold leading-snug text-slate-300 transition group-hover:text-white">
+                          {post.title}
+                        </span>
+                      </Link>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
       <div className="mx-auto max-w-7xl px-5 py-3 sm:px-8 lg:px-16 lg:py-4">
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-12 lg:gap-3">
           {/* BRAND / ABOUT */}

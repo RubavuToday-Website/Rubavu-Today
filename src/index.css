@@ -455,11 +455,15 @@ a {
 
 @media (min-width: 768px) {
   .public-site .news-headline-featured {
-    font-size: clamp(1.75rem, 2.35vw, 2.25rem);
+    font-size: clamp(1.375rem, 1.8vw, 1.625rem);
   }
 
   .public-site .news-headline-card {
-    font-size: clamp(1.0625rem, 1.4vw, 1.3125rem);
+    font-size: clamp(0.9375rem, 1.1vw, 1rem);
+  }
+
+  .public-site .news-summary {
+    font-size: 0.75rem;
   }
 }
 
@@ -528,6 +532,56 @@ a {
   line-height: 1.55;
 }
 
+@media (max-width: 639px) {
+  .public-site .post-card-mobile .news-headline-card {
+    font-size: 0.9375rem;
+  }
+
+  .public-site .post-card-mobile .news-summary {
+    font-size: 0.75rem;
+    line-height: 1.45;
+  }
+}
+
+.latest-stories-marquee {
+  overflow: hidden;
+}
+
+.latest-stories-marquee__track,
+.latest-stories-marquee__group {
+  display: flex;
+  width: max-content;
+}
+
+.latest-stories-marquee__track {
+  animation: latest-stories-scroll 55s linear infinite;
+  will-change: transform;
+}
+
+.latest-stories-marquee__group {
+  flex-shrink: 0;
+  gap: 1rem;
+  padding-right: 1rem;
+}
+
+.latest-stories-marquee:hover .latest-stories-marquee__track,
+.latest-stories-marquee:focus-within .latest-stories-marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes latest-stories-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .latest-stories-marquee__track {
+    animation: none;
+  }
+
+}
+
 .public-site .post-detail-page {
   font-family: var(--font-body);
 }
@@ -536,18 +590,18 @@ a {
   max-width: 740px;
   margin-right: auto;
   margin-left: auto;
-  color: #334155;
-  font-family: var(--font-body);
+  color: #1f2937;
+  font-family: Georgia, "Times New Roman", serif;
 }
 
 .public-site .post-detail-page .rt-article-content p {
   max-width: 740px;
   margin: 0 auto 1.5rem;
-  color: #334155;
-  font-family: var(--font-body);
-  font-size: 1.0625rem;
+  color: #1f2937;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1rem;
   font-weight: 400;
-  line-height: 1.75;
+  line-height: 1.8;
   letter-spacing: 0;
 }
 
@@ -612,13 +666,29 @@ a {
 
 @media (min-width: 768px) {
   .public-site .post-detail-page .rt-article-content p {
-    font-size: 1.125rem;
+    font-size: 0.9375rem;
     line-height: 1.75;
   }
 
   .public-site .post-detail-page .rt-article-content blockquote {
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+
+  .public-site .post-detail-page .rt-article-content h2 {
+    font-size: 1.25rem;
+  }
+
+  .public-site .post-detail-page .rt-article-content h3 {
     font-size: 1.125rem;
-    line-height: 1.75;
+  }
+
+  .public-site .post-detail-page .rt-article-content h4 {
+    font-size: 1rem;
+  }
+
+  .public-site .post-detail-page > header > p {
+    font-size: 0.875rem;
   }
 }
 

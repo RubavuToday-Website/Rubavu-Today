@@ -86,7 +86,7 @@ const About = () => {
             <li key={name}>
               <Link
                 to={`/?category=${encodeURIComponent(name)}`}
-                className="group flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
+                className="group flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-[13px] font-semibold text-slate-800 transition hover:border-red-200 hover:bg-red-50 hover:text-red-700"
               >
                 <span>{translateCategory(name, language)}</span>
                 <span aria-hidden="true" className="text-slate-400 transition group-hover:text-red-600">

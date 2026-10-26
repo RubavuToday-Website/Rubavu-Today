@@ -17,12 +17,12 @@ const InfoPageHeader = ({ title, lede }) => (
         <span className="text-slate-800">{title}</span>
       </nav>
 
-      <h1 className="font-post-title text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
+      <h1 className="font-post-title text-2xl font-black tracking-tight text-slate-950 sm:text-2xl">
         {title}
       </h1>
 
       {lede && (
-        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-base">
+        <p className="mt-3 max-w-3xl text-sm leading-relaxed text-slate-600 sm:text-sm">
           {lede}
         </p>
       )}
@@ -36,11 +36,11 @@ const InfoSection = ({ heading, children, id }) => (
     className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
   >
     {heading && (
-      <h2 className="mb-3 border-l-4 border-red-600 pl-3 font-post-title text-base font-extrabold text-slate-950 sm:text-lg">
+      <h2 className="mb-3 border-l-4 border-red-600 pl-3 font-post-title text-base font-extrabold text-slate-950 sm:text-base">
         {heading}
       </h2>
     )}
-    <div className="space-y-4 text-sm leading-relaxed text-slate-700 sm:text-[15px]">
+    <div className="space-y-4 text-sm leading-relaxed text-slate-700 sm:text-[13px]">
       {children}
     </div>
   </section>

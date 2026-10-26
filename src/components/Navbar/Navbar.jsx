@@ -821,6 +821,7 @@ const CompactCard = ({ post, matchedPostId, postRefs, variant = "default" }) => 
 
 
 const LatestWidget = ({ posts = [], postRefs }) => {
+  const { t } = useLanguage();
   const latest = useMemo(
     () => [...posts].sort((a, b) => getTime(b) - getTime(a)).slice(0, 6),
     [posts]
@@ -830,6 +831,9 @@ const LatestWidget = ({ posts = [], postRefs }) => {
 
   return (
     <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+      <h2 className="border-b border-slate-200 bg-slate-50 px-3 py-2 font-post-title text-[10px] font-black uppercase tracking-wider text-slate-800">
+        {t("latestNews")}
+      </h2>
       <div className="divide-y divide-slate-100">
         {latest.map((post) => {
           const postId = getPostId(post);
@@ -1040,13 +1044,10 @@ const NewsPostsLayout = ({
   if (!sortedNewest.length) return null;
 
   const renderSidebar = () => (
-    <aside className="min-w-0 lg:col-span-4">
-      <div className="space-y-3 lg:sticky lg:top-36">
+    <aside className="min-w-0 lg:sticky lg:top-36 lg:col-span-4 lg:max-h-[calc(100vh-10rem)] lg:self-start lg:overflow-y-auto scrollbar-thin">
+      <div className="space-y-3">
         <AdSlot ad={advertisements[3]} size="rectangle" />
-        <LatestWidget
-          posts={sortedNewest}
-          postRefs={postRefs}
-        />
+        <LatestWidget posts={sortedNewest} postRefs={postRefs} />
         <AdSlot ad={advertisements[4]} size="rectangle" />
       </div>
     </aside>
@@ -1055,7 +1056,7 @@ const NewsPostsLayout = ({
   /* Filtered category view (a nav link was clicked) — compact grid + sidebar. */
   if (isFilteredView) {
     return (
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
         <main className="min-w-0 lg:col-span-8">
           <div className="mb-4 flex items-end justify-between border-b-2 border-slate-900 pb-2.5">
             <div>
@@ -1090,7 +1091,7 @@ const NewsPostsLayout = ({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 gap-5 lg:grid-cols-12">
+      <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
         <main className="min-w-0 space-y-2.5 lg:col-span-8">
         {/* FEATURED NEWS */}
         <section>

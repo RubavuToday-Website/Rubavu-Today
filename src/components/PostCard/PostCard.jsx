@@ -115,10 +115,12 @@ const PostCard = ({ post }) => {
   };
 
   return (
-    <article className="group flex flex-col justify-between overflow-hidden border border-[#E5E3DC] bg-white transition hover:border-[#D8D5CC] shadow-sm hover:shadow-md">
-      <div>
-
-        <Link to={getPostSlugPath(post)} className="relative block aspect-[16/10] bg-[#F1EFE8] overflow-hidden">
+    <article className="post-card-mobile group grid min-w-0 grid-cols-[38%_minmax(0,1fr)] overflow-hidden rounded-lg border border-[#E5E3DC] bg-white shadow-sm transition hover:border-[#D8D5CC] hover:shadow-md sm:flex sm:flex-col">
+      <div className="contents sm:block">
+        <Link
+          to={getPostSlugPath(post)}
+          className="relative block min-h-[148px] overflow-hidden bg-[#F1EFE8] sm:aspect-[16/10] sm:min-h-0"
+        >
           <OptimizedImage
             src={post.image || FALLBACK_IMAGE}
             alt={post.title}
@@ -132,20 +134,17 @@ const PostCard = ({ post }) => {
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
           {post.category && (
-            <span className="news-category news-category-inverse absolute left-2.5 top-2.5 bg-[#B3261E] px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.12em] text-white shadow-sm">
+            <span className="news-category news-category-inverse absolute left-1.5 top-1.5 bg-[#B3261E] px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] text-white shadow-sm sm:left-2.5 sm:top-2.5 sm:px-2 sm:tracking-[0.12em]">
               {post.category}
             </span>
           )}
         </Link>
 
-
-        <div className="p-4 sm:p-5">
-
-          <div className="news-meta mb-2 flex flex-wrap items-center gap-2 uppercase tracking-wider text-[#888780]">
+        <div className="min-w-0 p-2.5 sm:p-4 lg:p-5">
+          <div className="news-meta mb-1.5 flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-1 uppercase tracking-wider text-[#888780] sm:mb-2 sm:gap-2">
             <time>{published}</time>
-            <span>•</span>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 lowercase text-xs text-slate-700">{readTime}</span>
-            <span>•</span>
+            <span aria-hidden="true">•</span>
+            <span className="rounded-full bg-slate-100 px-1.5 py-0.5 lowercase text-[9px] text-slate-700 sm:px-2 sm:text-xs">{readTime}</span>
             <span className="relative flex min-w-0 items-center gap-1">
               <button
                 type="button"
@@ -164,7 +163,7 @@ const PostCard = ({ post }) => {
                     {authorName.trim().charAt(0).toUpperCase() || "A"}
                   </span>
                 )}
-                <span className="max-w-[100px] truncate" title={authorName}>{authorName}</span>
+                <span className="max-w-[72px] truncate sm:max-w-[100px]" title={authorName}>{authorName}</span>
               </button>
               <AuthorProfilePopup
                 author={author}
@@ -175,33 +174,31 @@ const PostCard = ({ post }) => {
           </div>
 
           <Link to={getPostSlugPath(post)}>
-            <h2 className="news-headline-card font-masthead mt-1 text-lg sm:text-xl font-extrabold leading-snug text-[#161616] transition group-hover:text-[#B3261E]">
+            <h2 className="news-headline-card mt-1 line-clamp-3 break-words font-masthead text-sm font-extrabold leading-snug text-[#161616] transition group-hover:text-[#B3261E] sm:text-lg">
               {post.title}
             </h2>
           </Link>
 
-
-          <p className="news-summary mt-2 line-clamp-2 text-sm leading-relaxed text-[#5F5E5A]">
+          <p className="news-summary mt-1.5 line-clamp-2 text-xs leading-relaxed text-[#5F5E5A] sm:mt-2 sm:text-sm">
             {contentText}
           </p>
         </div>
       </div>
 
-
-      <div className="flex items-center justify-between border-t border-[#E5E3DC] bg-[#FAFAF7] px-4 sm:px-5 py-3 text-xs">
+      <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 border-t border-[#E5E3DC] bg-[#FAFAF7] px-2.5 py-2 text-[10px] sm:px-4 sm:py-3 sm:text-xs lg:px-5">
         <Link
           to={getPostSlugPath(post)}
-          className="font-bold uppercase tracking-wider text-[#161616] transition hover:text-[#B3261E]"
+          className="shrink-0 font-bold uppercase tracking-wider text-[#161616] transition hover:text-[#B3261E]"
         >
           Read More →
         </Link>
 
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <span className="text-[#888780]" title={t("views")}>👁 {post.views || 0}</span>
           <button
             type="button"
             onClick={handleShare}
-            className="text-slate-600 hover:text-red-600 transition font-medium relative"
+            className="truncate text-slate-600 transition hover:text-red-600"
             title={t("shareCode")}
           >
             {copied ? t("copied") : `🔗 ${t("shareCode")}`}

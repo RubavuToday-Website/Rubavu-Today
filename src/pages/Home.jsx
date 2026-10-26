@@ -592,7 +592,9 @@ const Home = () => {
           ) : sortedPosts.length > 0 ? (
 
             <div className="space-y-2">
-              {!isSearching && <FeaturedStoriesLayout />}
+              {!isSearching && (
+                <FeaturedStoriesLayout />
+              )}
 
               <SectionHeader
                 title={query.trim()
